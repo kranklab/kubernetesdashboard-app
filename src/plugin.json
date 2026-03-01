@@ -29,6 +29,41 @@
     },
     {
       "type": "page",
+      "name": "Workloads",
+      "path": "/a/%PLUGIN_ID%/fasg",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Networking",
+      "path": "/a/%PLUGIN_ID%/networking",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Config & Storage",
+      "path": "/a/%PLUGIN_ID%/config-storage",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Cluster",
+      "path": "/a/%PLUGIN_ID%/cluster",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Custom Resource Definitions",
+      "path": "/a/%PLUGIN_ID%/crds",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
       "name": "Page with tabs",
       "path": "/a/%PLUGIN_ID%/page-with-tabs",
       "addToNav": true,

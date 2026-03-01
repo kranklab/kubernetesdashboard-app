@@ -1,5 +1,6 @@
 import {
   CustomVariable,
+  DataSourceVariable,
   EmbeddedScene,
   PanelBuilders,
   SceneControlsSpacer,
@@ -14,6 +15,98 @@ import {
 } from '@grafana/scenes';
 import { DATASOURCE_REF } from '../../constants';
 import { CustomSceneObject } from './CustomSceneObject';
+import { MetadataHeader } from './MetadataHeader';
+import { ResourceInfoSection } from './ResourceInfoSection';
+import { ConditionsSection } from './ConditionsSection';
+import { ControlledBySection } from './ControlledBySection';
+import { EventsSection } from './EventsSection';
+import { ContainersSection } from './ContainersSection';
+
+function makeClusterVariable() {
+  return new SceneVariableSet({
+    variables: [
+      new DataSourceVariable({
+        name: 'ds',
+        pluginId: 'kranklab-kubernetes-datasource',
+        label: 'Cluster',
+      }),
+    ],
+  });
+}
+
+export function getWorkloadOverviewScene(type: string, namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'get',
+          resource: type,
+          namespace,
+          name,
+        },
+      ],
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ContainersSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ConditionsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ControlledBySection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new EventsSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
+}
+
+export function getWorkloadEventsScene(namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'list',
+          resource: 'events',
+          namespace,
+          name,
+        },
+      ],
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({
+          ySizing: 'fill',
+          body: PanelBuilders.table()
+            .setTitle('Events')
+            .setDisplayMode('transparent')
+            .build(),
+        }),
+      ],
+    }),
+    controls: [
+      new VariableValueSelectors({}),
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
+}
 
 export function getBasicScene(templatised = true, seriesToShow = '__server_names') {
   const timeRange = new SceneTimeRange({
