@@ -29,7 +29,6 @@
     "@types/jest": "^29.5.0",
     "@types/node": "^22.19.13",
     "@types/react-router-dom": "^5.2.0",
-    "@types/testing-library__jest-dom": "^6.0.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
     "eslint-plugin-deprecation": "^2.0.0",
