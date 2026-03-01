@@ -61,27 +61,6 @@
       "path": "/a/%PLUGIN_ID%/crds",
       "addToNav": true,
       "defaultNav": false
-    },
-    {
-      "type": "page",
-      "name": "Page with tabs",
-      "path": "/a/%PLUGIN_ID%/page-with-tabs",
-      "addToNav": true,
-      "defaultNav": false
-    },
-    {
-      "type": "page",
-      "name": "Page with drilldown",
-      "path": "/a/%PLUGIN_ID%/page-with-drilldown",
-      "addToNav": true,
-      "defaultNav": false
-    },
-    {
-      "type": "page",
-      "name": "Hello world",
-      "path": "/a/%PLUGIN_ID%/hello-world",
-      "addToNav": true,
-      "defaultNav": false
     }
   ],
   "dependencies": {

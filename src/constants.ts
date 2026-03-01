@@ -8,9 +8,6 @@ export enum ROUTES {
   ConfigStorage = 'config-storage',
   Cluster = 'cluster',
   CRDs = 'crds',
-  WithTabs = 'page-with-tabs',
-  WithDrilldown = 'page-with-drilldown',
-  HelloWorld = 'hello-world',
 }
 
 export const DATASOURCE_REF = {
