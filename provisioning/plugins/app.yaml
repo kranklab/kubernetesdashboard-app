@@ -10,4 +10,3 @@ apps:
       isApiKeySet: true
     secureJsonData:
       apiKey: secret-key
-`
