@@ -24,7 +24,8 @@ import {
     TableCellDisplayMode,
 } from '@grafana/schema';
 import { prefixRoute } from '../../utils/utils.routing';
-import { ROUTES } from '../../constants';
+import { PLUGIN_BASE_URL, ROUTES } from '../../constants';
+import { withNameLinks } from '../../utils/utils.links';
 import { getWorkloadOverviewScene, getWorkloadEventsScene } from './scenes';
 
 type ResourceName = 'pods' | 'deployments' | 'replicasets' | 'daemonsets' | 'statefulsets' | 'jobs' | 'cronjobs';
@@ -136,6 +137,18 @@ const getHomeScene = () => {
         tableRunners[name] = makeQueryRunner(name);
     });
 
+    // Wrap table runners with link transformers (injects links directly into field.config
+    // to bypass the Grafana 12 fieldConfigRegistry which dropped standard 'links' override support)
+    const tableData = Object.fromEntries(
+        RESOURCES.map((resource) => [
+            resource,
+            withNameLinks(
+                tableRunners[resource],
+                `${PLUGIN_BASE_URL}/${ROUTES.Home}/workload/${resource}/\${__data.fields["Namespace"]}/\${__value.text}/overview`
+            ),
+        ])
+    );
+
     // ── Grid dimensions ──────────────────────────────────────────────────────
     const STAT_H = 4;
     const TABLE_H = 10;
@@ -187,17 +200,11 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Pods')
-                    .setData(tableRunners['pods'])
+                    .setData(tableData['pods'])
                     .setOption('sortBy', [{ displayName: 'name', desc: false }])
                     .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View Pod',
-                                url: `\${__url.path}/workload/pods/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                        b.matchFieldsWithName('status').overrideMappings(POD_STATUS_MAPPINGS);
-                        b.matchFieldsWithName('status').overrideCustomFieldConfig(
+                        b.matchFieldsWithName('Status').overrideMappings(POD_STATUS_MAPPINGS);
+                        b.matchFieldsWithName('Status').overrideCustomFieldConfig(
                             'displayMode',
                             TableCellDisplayMode.ColorText
                         );
@@ -220,16 +227,10 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Deployments')
-                    .setData(tableRunners['deployments'])
+                    .setData(tableData['deployments'])
                     .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View Deployment',
-                                url: `\${__url.path}/workload/deployments/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                        b.matchFieldsWithName('status').overrideMappings(DEPLOYMENT_STATUS_MAPPINGS);
-                        b.matchFieldsWithName('status').overrideCustomFieldConfig(
+                        b.matchFieldsWithName('Status').overrideMappings(DEPLOYMENT_STATUS_MAPPINGS);
+                        b.matchFieldsWithName('Status').overrideCustomFieldConfig(
                             'displayMode',
                             TableCellDisplayMode.ColorText
                         );
@@ -243,15 +244,7 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Replica Sets')
-                    .setData(tableRunners['replicasets'])
-                    .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View ReplicaSet',
-                                url: `\${__url.path}/workload/replicasets/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                    })
+                    .setData(tableData['replicasets'])
                     .build(),
             }),
         ],
@@ -270,15 +263,7 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Daemon Sets')
-                    .setData(tableRunners['daemonsets'])
-                    .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View DaemonSet',
-                                url: `\${__url.path}/workload/daemonsets/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                    })
+                    .setData(tableData['daemonsets'])
                     .build(),
             }),
             new SceneGridItem({
@@ -288,15 +273,7 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Stateful Sets')
-                    .setData(tableRunners['statefulsets'])
-                    .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View StatefulSet',
-                                url: `\${__url.path}/workload/statefulsets/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                    })
+                    .setData(tableData['statefulsets'])
                     .build(),
             }),
         ],
@@ -315,15 +292,7 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Jobs')
-                    .setData(tableRunners['jobs'])
-                    .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View Job',
-                                url: `\${__url.path}/workload/jobs/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                    })
+                    .setData(tableData['jobs'])
                     .build(),
             }),
             new SceneGridItem({
@@ -333,15 +302,7 @@ const getHomeScene = () => {
                 height: TABLE_H,
                 body: PanelBuilders.table()
                     .setTitle('Cron Jobs')
-                    .setData(tableRunners['cronjobs'])
-                    .setOverrides((b) => {
-                        b.matchFieldsWithName('name').overrideLinks([
-                            {
-                                title: 'View CronJob',
-                                url: `\${__url.path}/workload/cronjobs/\${__data.fields["namespace"]}/\${__value.text}/overview`,
-                            },
-                        ]);
-                    })
+                    .setData(tableData['cronjobs'])
                     .build(),
             }),
         ],

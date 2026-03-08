@@ -98,7 +98,7 @@ function extractContainers(data: any): Container[] {
   }
 
   const col = (name: string) => frame.fields.find((f) => f.name === name);
-  const nameF = col('name');
+  const nameF = col('Name');
   const count = (nameF?.values as any)?.length ?? 0;
   if (count === 0) {
     return [];
@@ -108,23 +108,20 @@ function extractContainers(data: any): Container[] {
   for (let i = 0; i < count; i++) {
     const get = (fieldName: string) => (col(fieldName)?.values as any)?.[i];
 
-    // Resources can be nested under a "resources" JSON field or as flat fields
-    const resources = parseJson(get('resources'));
-
     containers.push({
-      name: get('name') ?? '',
-      image: get('image'),
-      ready: get('ready'),
-      started: get('started'),
-      reason: get('reason'),
-      env: parseJson(get('env')),
-      command: parseJson(get('command') ?? get('commands')),
-      args: parseJson(get('args')),
-      mounts: parseJson(get('mounts')),
-      readinessProbe: parseJson(get('readinessProbe')),
-      securityContext: parseJson(get('securityContext')),
-      limits: resources?.limits ?? parseJson(get('limits')),
-      requests: resources?.requests ?? parseJson(get('requests')),
+      name: get('Name') ?? '',
+      image: get('Image'),
+      ready: get('Ready'),
+      started: get('Started'),
+      reason: get('Reason'),
+      env: parseJson(get('Env')),
+      command: parseJson(get('Command')),
+      args: parseJson(get('Args')),
+      mounts: parseJson(get('Mounts')),
+      readinessProbe: parseJson(get('Readiness Probe')),
+      securityContext: parseJson(get('Security Context')),
+      limits: parseJson(get('Limits')),
+      requests: parseJson(get('Requests')),
     });
   }
   return containers;
@@ -235,6 +232,7 @@ function getStyles(theme: GrafanaTheme2) {
 
 function ContainerItem({ container, styles }: { container: Container; styles: ReturnType<typeof getStyles> }) {
   const [collapsed, setCollapsed] = useState(false);
+  const hasReadyInfo = container.ready !== undefined && container.ready !== null;
   const ready = isReady(container.ready);
 
   const probeFields: Array<{ label: string; value?: string | number }> = [
@@ -278,10 +276,12 @@ function ContainerItem({ container, styles }: { container: Container; styles: Re
   return (
     <div className={styles.containerItem}>
       <div className={styles.containerHeader} onClick={() => setCollapsed((c) => !c)}>
-        <div
-          className={styles.dot}
-          style={{ backgroundColor: ready ? '#73BF69' : '#F2495C' }}
-        />
+        {hasReadyInfo && (
+          <div
+            className={styles.dot}
+            style={{ backgroundColor: ready ? '#73BF69' : '#F2495C' }}
+          />
+        )}
         <span className={styles.containerHeaderName}>{container.name}</span>
         <span className={styles.containerToggle}>{collapsed ? '+' : '−'}</span>
       </div>

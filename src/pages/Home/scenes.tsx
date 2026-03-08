@@ -21,6 +21,11 @@ import { ConditionsSection } from './ConditionsSection';
 import { ControlledBySection } from './ControlledBySection';
 import { EventsSection } from './EventsSection';
 import { ContainersSection } from './ContainersSection';
+import { ReplicaSetsSection } from './ReplicaSetsSection';
+import { HPASection } from './HPASection';
+import { PodsSection } from './PodsSection';
+import { ServicesSection } from './ServicesSection';
+import { JobsSection } from './JobsSection';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
@@ -60,6 +65,14 @@ export function getWorkloadOverviewScene(type: string, namespace: string, name: 
         new SceneFlexItem({ ySizing: 'content', body: new ContainersSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ConditionsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ControlledBySection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ReplicaSetsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new HPASection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new PodsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ServicesSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new EndpointsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new RulesSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new IngressesListSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new JobsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new EventsSection({}) }),
       ],
     }),

@@ -19,8 +19,8 @@ function extractControlledBy(data: any): ControlledByInfo {
   }
 
   return {
-    ownerKind: getFieldValue(frame, 'ownerKind'),
-    ownerName: getFieldValue(frame, 'ownerName'),
+    ownerKind: getFieldValue(frame, 'Owner Kind'),
+    ownerName: getFieldValue(frame, 'Owner Name'),
     created: getFieldValue(frame, 'created'),
     labels: parseJsonOrObject(getFieldValue(frame, 'labels')),
   };

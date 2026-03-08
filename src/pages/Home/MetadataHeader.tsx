@@ -97,8 +97,8 @@ function extractMetadata(data: any): MetadataInfo {
     uid: getFieldValue(frame, 'uid'),
     created: getFieldValue(frame, 'created'),
     owner: buildOwner(
-      getFieldValue(frame, 'ownerKind'),
-      getFieldValue(frame, 'ownerName')
+      getFieldValue(frame, 'Owner Kind'),
+      getFieldValue(frame, 'Owner Name')
     ),
     labels: parseJsonOrObject(getFieldValue(frame, 'labels')),
     annotations: parseJsonOrObject(getFieldValue(frame, 'annotations')),
@@ -146,10 +146,12 @@ function MetadataHeaderRenderer({ model }: SceneComponentProps<MetadataHeader>) 
           <span className={styles.fieldLabel}>Name</span>
           <span className={styles.fieldValue}>{meta.name ?? '-'}</span>
         </div>
-        <div className={styles.field}>
-          <span className={styles.fieldLabel}>Namespace</span>
-          <span className={styles.fieldValue}>{meta.namespace ?? '-'}</span>
-        </div>
+        {meta.namespace !== undefined && (
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Namespace</span>
+            <span className={styles.fieldValue}>{meta.namespace}</span>
+          </div>
+        )}
         <div className={styles.field}>
           <span className={styles.fieldLabel}>Created</span>
           <span className={styles.fieldValue}>{formatCreated(meta.created)}</span>

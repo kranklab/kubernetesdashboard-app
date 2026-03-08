@@ -2,6 +2,7 @@ import {
   PanelBuilders,
   SceneQueryRunner,
 } from '@grafana/scenes';
+import { withNameLinks } from '../../utils/utils.links';
 
 function makeQueryRunner(resource: string): SceneQueryRunner {
   return new SceneQueryRunner({
@@ -21,7 +22,7 @@ function makeQueryRunner(resource: string): SceneQueryRunner {
   });
 }
 
-export function makeDetailQueryRunner(resource: string, name: string): SceneQueryRunner {
+export function makeDetailQueryRunner(resource: string, namespace: string, name: string): SceneQueryRunner {
   return new SceneQueryRunner({
     datasource: {
       type: 'kranklab-kubernetes-datasource',
@@ -31,7 +32,7 @@ export function makeDetailQueryRunner(resource: string, name: string): SceneQuer
       {
         refId: 'A',
         action: 'get',
-        namespace: '${namespace}',
+        namespace,
         resource,
         name,
       },
@@ -43,47 +44,33 @@ export function makeDetailQueryRunner(resource: string, name: string): SceneQuer
 export function getServicesTable() {
   return PanelBuilders.table()
     .setTitle('Services')
-    .setData(makeQueryRunner('services'))
+    .setData(
+      withNameLinks(
+        makeQueryRunner('services'),
+        '${__url.path}/service/${__data.fields["Namespace"]}/${__value.text}${__url.params}'
+      )
+    )
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Service',
-          url: '${__url.path}/service/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }
 
 export function getIngressesTable() {
   return PanelBuilders.table()
     .setTitle('Ingresses')
-    .setData(makeQueryRunner('ingresses'))
+    .setData(
+      withNameLinks(
+        makeQueryRunner('ingresses'),
+        '${__url.path}/ingress/${__data.fields["Namespace"]}/${__value.text}${__url.params}'
+      )
+    )
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Ingress',
-          url: '${__url.path}/ingress/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }
 
 export function getIngressClassesTable() {
   return PanelBuilders.table()
     .setTitle('Ingress Classes')
-    .setData(makeQueryRunner('ingressclasses'))
+    .setData(withNameLinks(makeQueryRunner('ingressclasses'), '${__url.path}/ingressclass/${__value.text}${__url.params}'))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Ingress Class',
-          url: '${__url.path}/ingressclass/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }

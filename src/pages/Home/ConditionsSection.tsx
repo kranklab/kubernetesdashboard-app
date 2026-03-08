@@ -25,17 +25,17 @@ function extractConditions(data: any): Condition[] {
   }
 
   const col = (name: string) => frame.fields.find((f) => f.name === name);
-  const typeF = col('type');
+  const typeF = col('Type');
   const count = typeF?.values.length ?? 0;
   if (count === 0) {
     return [];
   }
 
-  const statusF = col('status');
-  const lastProbeF = col('lastProbeTime');
-  const lastTransF = col('lastTransitionTime');
-  const reasonF = col('reason');
-  const messageF = col('message');
+  const statusF = col('Status');
+  const lastProbeF = col('Last Probe Time');
+  const lastTransF = col('Last Transition Time');
+  const reasonF = col('Reason');
+  const messageF = col('Message');
 
   const conditions: Condition[] = [];
   for (let i = 0; i < count; i++) {

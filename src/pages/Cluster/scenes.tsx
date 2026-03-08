@@ -1,19 +1,23 @@
 import {
   DataSourceVariable,
   EmbeddedScene,
-  PanelBuilders,
-  QueryVariable,
   SceneControlsSpacer,
   SceneFlexItem,
   SceneFlexLayout,
+  SceneQueryRunner,
   SceneRefreshPicker,
   SceneVariableSet,
-  VariableValueSelectors,
 } from '@grafana/scenes';
-import { makeDetailQueryRunner } from './panels';
 import { MetadataHeader } from '../Home/MetadataHeader';
+import { ResourceInfoSection } from '../Home/ResourceInfoSection';
+import { ConditionsSection } from '../Home/ConditionsSection';
+import { RBACRulesSection } from '../Home/RBACRulesSection';
+import { SubjectsSection } from '../Home/SubjectsSection';
+import { ServiceAccountSection } from '../Home/ServiceAccountSection';
+import { NodeSystemInfoSection } from '../Home/NodeSystemInfoSection';
+import { PVSourceSection } from '../Home/PVSourceSection';
 
-function makeVariables() {
+function makeClusterVariable() {
   return new SceneVariableSet({
     variables: [
       new DataSourceVariable({
@@ -21,87 +25,69 @@ function makeVariables() {
         pluginId: 'kranklab-kubernetes-datasource',
         label: 'Cluster',
       }),
-      new QueryVariable({
-        name: 'namespace',
-        label: 'Namespace',
-        datasource: {
-          type: 'kranklab-kubernetes-datasource',
-          uid: '${ds}',
-        },
-        query: {
-          refId: 'namespaces',
-          action: 'list',
-          resource: 'namespaces',
-        },
-        includeAll: true,
-        defaultToAll: true,
-        allValue: '_all',
-      }),
     ],
   });
 }
 
-function makeDetailScene(title: string, resource: string, name: string) {
+function makeDetailScene(resource: string, name: string, namespace: string | null, ...sections: any[]) {
+  const queries: any[] = [{ refId: 'A', action: 'get', resource, name }];
+  if (namespace) {
+    queries[0].namespace = namespace;
+  }
   return new EmbeddedScene({
-    $variables: makeVariables(),
-    $data: makeDetailQueryRunner(resource, name),
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: { type: 'kranklab-kubernetes-datasource', uid: '${ds}' },
+      queries,
+      maxDataPoints: 100,
+    }),
     body: new SceneFlexLayout({
       direction: 'column',
       children: [
         new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
-        new SceneFlexItem({
-          ySizing: 'fill',
-          body: PanelBuilders.table()
-            .setTitle(title)
-            .setDisplayMode('transparent')
-            .build(),
-        }),
+        ...sections.map((s) => new SceneFlexItem({ ySizing: 'content', body: s })),
       ],
     }),
-    controls: [
-      new VariableValueSelectors({}),
-      new SceneControlsSpacer(),
-      new SceneRefreshPicker({}),
-    ],
+    controls: [new SceneControlsSpacer(), new SceneRefreshPicker({})],
   });
 }
 
 export function getClusterRoleBindingDetailScene(name: string) {
-  return makeDetailScene(`Cluster Role Binding: ${name}`, 'clusterrolebindings', name);
+  return makeDetailScene('clusterrolebindings', name, null, new ResourceInfoSection({}), new SubjectsSection({}));
 }
 
 export function getClusterRoleDetailScene(name: string) {
-  return makeDetailScene(`Cluster Role: ${name}`, 'clusterroles', name);
+  return makeDetailScene('clusterroles', name, null, new RBACRulesSection({}));
 }
 
 export function getEventDetailScene(name: string) {
-  return makeDetailScene(`Event: ${name}`, 'events', name);
+  return makeDetailScene('events', name, null);
 }
 
 export function getNamespaceDetailScene(name: string) {
-  return makeDetailScene(`Namespace: ${name}`, 'namespaces', name);
+  return makeDetailScene('namespaces', name, null, new ResourceInfoSection({}));
 }
 
-export function getNetworkPolicyDetailScene(name: string) {
-  return makeDetailScene(`Network Policy: ${name}`, 'networkpolicies', name);
+export function getNetworkPolicyDetailScene(namespace: string, name: string) {
+  return makeDetailScene('networkpolicies', name, namespace, new ResourceInfoSection({}));
 }
 
 export function getNodeDetailScene(name: string) {
-  return makeDetailScene(`Node: ${name}`, 'nodes', name);
+  return makeDetailScene('nodes', name, null, new ResourceInfoSection({}), new NodeSystemInfoSection({}), new ConditionsSection({}));
 }
 
 export function getPersistentVolumeDetailScene(name: string) {
-  return makeDetailScene(`Persistent Volume: ${name}`, 'persistentvolumes', name);
+  return makeDetailScene('persistentvolumes', name, null, new ResourceInfoSection({}), new PVSourceSection({}));
 }
 
-export function getRoleBindingDetailScene(name: string) {
-  return makeDetailScene(`Role Binding: ${name}`, 'rolebindings', name);
+export function getRoleBindingDetailScene(namespace: string, name: string) {
+  return makeDetailScene('rolebindings', name, namespace, new ResourceInfoSection({}), new SubjectsSection({}));
 }
 
-export function getRoleDetailScene(name: string) {
-  return makeDetailScene(`Role: ${name}`, 'roles', name);
+export function getRoleDetailScene(namespace: string, name: string) {
+  return makeDetailScene('roles', name, namespace, new RBACRulesSection({}));
 }
 
-export function getServiceAccountDetailScene(name: string) {
-  return makeDetailScene(`Service Account: ${name}`, 'serviceaccounts', name);
+export function getServiceAccountDetailScene(namespace: string, name: string) {
+  return makeDetailScene('serviceaccounts', name, namespace, new ServiceAccountSection({}));
 }

@@ -2,6 +2,7 @@ import {
   PanelBuilders,
   SceneQueryRunner,
 } from '@grafana/scenes';
+import { withNameLinks } from '../../utils/utils.links';
 
 function makeQueryRunner(resource: string): SceneQueryRunner {
   return new SceneQueryRunner({
@@ -43,63 +44,31 @@ export function makeDetailQueryRunner(resource: string, name: string): SceneQuer
 export function getConfigMapsTable() {
   return PanelBuilders.table()
     .setTitle('Config Maps')
-    .setData(makeQueryRunner('configmaps'))
+    .setData(withNameLinks(makeQueryRunner('configmaps'), '${__url.path}/configmap/${__data.fields["Namespace"]}/${__value.text}${__url.params}'))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Config Map',
-          url: '${__url.path}/configmap/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }
 
 export function getPersistentVolumeClaimsTable() {
   return PanelBuilders.table()
     .setTitle('Persistent Volume Claims')
-    .setData(makeQueryRunner('persistentvolumeclaims'))
+    .setData(withNameLinks(makeQueryRunner('persistentvolumeclaims'), '${__url.path}/pvc/${__data.fields["Namespace"]}/${__value.text}${__url.params}'))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Persistent Volume Claim',
-          url: '${__url.path}/pvc/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }
 
 export function getSecretsTable() {
   return PanelBuilders.table()
     .setTitle('Secrets')
-    .setData(makeQueryRunner('secrets'))
+    .setData(withNameLinks(makeQueryRunner('secrets'), '${__url.path}/secret/${__data.fields["Namespace"]}/${__value.text}${__url.params}'))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Secret',
-          url: '${__url.path}/secret/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }
 
 export function getStorageClassesTable() {
   return PanelBuilders.table()
     .setTitle('Storage Classes')
-    .setData(makeQueryRunner('storageclasses'))
+    .setData(withNameLinks(makeQueryRunner('storageclasses'), '${__url.path}/storageclass/${__value.text}${__url.params}'))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: 'View Storage Class',
-          url: '${__url.path}/storageclass/${__value.text}${__url.params}',
-        },
-      ]);
-    })
     .build();
 }

@@ -27,19 +27,19 @@ function extractEvents(data: any): Event[] {
   }
 
   const col = (name: string) => frame.fields.find((f) => f.name === name);
-  const nameF = col('name');
+  const nameF = col('Name');
   const count = nameF?.values.length ?? 0;
   if (count === 0) {
     return [];
   }
 
-  const reasonF = col('reason');
-  const messageF = col('message');
-  const sourceF = col('source');
-  const subObjF = col('subObject');
-  const countF = col('count');
-  const firstSeenF = col('firstSeen');
-  const lastSeenF = col('lastSeen');
+  const reasonF = col('Reason');
+  const messageF = col('Message');
+  const sourceF = col('Source');
+  const subObjF = col('Sub Object');
+  const countF = col('Count');
+  const firstSeenF = col('First Seen');
+  const lastSeenF = col('Last Seen');
 
   const events: Event[] = [];
   for (let i = 0; i < count; i++) {

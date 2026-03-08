@@ -97,38 +97,39 @@ const getConfigStorageAppScene = () => {
         getScene: getConfigStorageScene,
         drilldowns: [
           {
-            routePath: `${baseUrl}/configmap/:name`,
+            routePath: `${baseUrl}/configmap/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Config Map: ${name}`,
-                url: `${baseUrl}/configmap/${name}`,
+                subTitle: `Detailed view of ${namespace}/${name}`,
+                url: `${baseUrl}/configmap/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getConfigMapDetailScene(name),
+                getScene: () => getConfigMapDetailScene(namespace, name),
               });
             },
           },
           {
-            routePath: `${baseUrl}/pvc/:name`,
+            routePath: `${baseUrl}/pvc/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `PVC: ${name}`,
-                url: `${baseUrl}/pvc/${name}`,
+                url: `${baseUrl}/pvc/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getPVCDetailScene(name),
+                getScene: () => getPVCDetailScene(namespace, name),
               });
             },
           },
           {
-            routePath: `${baseUrl}/secret/:name`,
+            routePath: `${baseUrl}/secret/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Secret: ${name}`,
-                url: `${baseUrl}/secret/${name}`,
+                url: `${baseUrl}/secret/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getSecretDetailScene(name),
+                getScene: () => getSecretDetailScene(namespace, name),
               });
             },
           },

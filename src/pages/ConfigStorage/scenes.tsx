@@ -1,19 +1,20 @@
 import {
   DataSourceVariable,
   EmbeddedScene,
-  PanelBuilders,
-  QueryVariable,
   SceneControlsSpacer,
   SceneFlexItem,
   SceneFlexLayout,
+  SceneQueryRunner,
   SceneRefreshPicker,
   SceneVariableSet,
-  VariableValueSelectors,
 } from '@grafana/scenes';
-import { makeDetailQueryRunner } from './panels';
 import { MetadataHeader } from '../Home/MetadataHeader';
+import { ResourceInfoSection } from '../Home/ResourceInfoSection';
+import { DataSection } from '../Home/DataSection';
+import { SecretDataSection } from '../Home/SecretDataSection';
+import { PersistentVolumesSection } from '../Home/PersistentVolumesSection';
 
-function makeVariables() {
+function makeClusterVariable() {
   return new SceneVariableSet({
     variables: [
       new DataSourceVariable({
@@ -21,63 +22,139 @@ function makeVariables() {
         pluginId: 'kranklab-kubernetes-datasource',
         label: 'Cluster',
       }),
-      new QueryVariable({
-        name: 'namespace',
-        label: 'Namespace',
-        datasource: {
-          type: 'kranklab-kubernetes-datasource',
-          uid: '${ds}',
-        },
-        query: {
-          refId: 'namespaces',
-          action: 'list',
-          resource: 'namespaces',
-        },
-        includeAll: true,
-        defaultToAll: true,
-        allValue: '_all',
-      }),
     ],
   });
 }
 
-function makeDetailScene(title: string, resource: string, name: string) {
+
+export function getConfigMapDetailScene(namespace: string, name: string) {
   return new EmbeddedScene({
-    $variables: makeVariables(),
-    $data: makeDetailQueryRunner(resource, name),
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'get',
+          namespace,
+          resource: 'configmaps',
+          name,
+        },
+      ],
+      maxDataPoints: 100,
+    }),
     body: new SceneFlexLayout({
       direction: 'column',
       children: [
         new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
-        new SceneFlexItem({
-          ySizing: 'fill',
-          body: PanelBuilders.table()
-            .setTitle(title)
-            .setDisplayMode('transparent')
-            .build(),
-        }),
+        new SceneFlexItem({ ySizing: 'content', body: new DataSection({}) }),
       ],
     }),
     controls: [
-      new VariableValueSelectors({}),
       new SceneControlsSpacer(),
       new SceneRefreshPicker({}),
     ],
   });
 }
 
-export function getConfigMapDetailScene(name: string) {
-  return makeDetailScene(`Config Map: ${name}`, 'configmaps', name);
+export function getPVCDetailScene(namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'get',
+          namespace,
+          resource: 'persistentvolumeclaims',
+          name,
+        },
+      ],
+      maxDataPoints: 100,
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
 }
 
-export function getPVCDetailScene(name: string) {
-  return makeDetailScene(`Persistent Volume Claim: ${name}`, 'persistentvolumeclaims', name);
-}
-
-export function getSecretDetailScene(name: string) {
-  return makeDetailScene(`Secret: ${name}`, 'secrets', name);
+export function getSecretDetailScene(namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'get',
+          namespace,
+          resource: 'secrets',
+          name,
+        },
+      ],
+      maxDataPoints: 100,
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new SecretDataSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
 }
 
 export function getStorageClassDetailScene(name: string) {
-  return makeDetailScene(`Storage Class: ${name}`, 'storageclasses', name);
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'get',
+          resource: 'storageclasses',
+          name,
+        },
+      ],
+      maxDataPoints: 100,
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new PersistentVolumesSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
 }

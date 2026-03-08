@@ -151,14 +151,14 @@ const getClusterAppScene = () => {
             },
           },
           {
-            routePath: `${baseUrl}/networkpolicy/:name`,
+            routePath: `${baseUrl}/networkpolicy/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Network Policy: ${name}`,
-                url: `${baseUrl}/networkpolicy/${name}`,
+                url: `${baseUrl}/networkpolicy/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getNetworkPolicyDetailScene(name),
+                getScene: () => getNetworkPolicyDetailScene(namespace, name),
               });
             },
           },
@@ -187,38 +187,38 @@ const getClusterAppScene = () => {
             },
           },
           {
-            routePath: `${baseUrl}/rolebinding/:name`,
+            routePath: `${baseUrl}/rolebinding/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Role Binding: ${name}`,
-                url: `${baseUrl}/rolebinding/${name}`,
+                url: `${baseUrl}/rolebinding/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getRoleBindingDetailScene(name),
+                getScene: () => getRoleBindingDetailScene(namespace, name),
               });
             },
           },
           {
-            routePath: `${baseUrl}/role/:name`,
+            routePath: `${baseUrl}/role/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Role: ${name}`,
-                url: `${baseUrl}/role/${name}`,
+                url: `${baseUrl}/role/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getRoleDetailScene(name),
+                getScene: () => getRoleDetailScene(namespace, name),
               });
             },
           },
           {
-            routePath: `${baseUrl}/serviceaccount/:name`,
+            routePath: `${baseUrl}/serviceaccount/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Service Account: ${name}`,
-                url: `${baseUrl}/serviceaccount/${name}`,
+                url: `${baseUrl}/serviceaccount/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () => getServiceAccountDetailScene(name),
+                getScene: () => getServiceAccountDetailScene(namespace, name),
               });
             },
           },

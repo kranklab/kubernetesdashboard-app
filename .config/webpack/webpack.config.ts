@@ -219,15 +219,15 @@ const config = async (env): Promise<Configuration> => {
           files: ['plugin.json', 'README.md'],
           rules: [
             {
-              search: /\%VERSION\%/g,
+              search: /%VERSION%/g,
               replace: getPackageJson().version,
             },
             {
-              search: /\%TODAY\%/g,
+              search: /%TODAY%/g,
               replace: new Date().toISOString().substring(0, 10),
             },
             {
-              search: /\%PLUGIN_ID\%/g,
+              search: /%PLUGIN_ID%/g,
               replace: pluginJson.id,
             },
           ],
@@ -260,6 +260,10 @@ const config = async (env): Promise<Configuration> => {
       modules: [path.resolve(process.cwd(), 'src'), 'node_modules'],
       unsafeCache: true,
     },
+
+    // Suppress known false-positive warnings from @grafana/scenes importing a
+    // `defaultOptions` export that was removed in @grafana/schema 12.x.
+    ignoreWarnings: [/export 'defaultOptions'.*was not found in '@grafana\/schema/],
   };
 
   if (isWSL()) {

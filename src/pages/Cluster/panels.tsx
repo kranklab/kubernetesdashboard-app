@@ -2,6 +2,7 @@ import {
   PanelBuilders,
   SceneQueryRunner,
 } from '@grafana/scenes';
+import { withNameLinks } from '../../utils/utils.links';
 
 function makeQueryRunner(resource: string): SceneQueryRunner {
   return new SceneQueryRunner({
@@ -43,16 +44,16 @@ export function makeDetailQueryRunner(resource: string, name: string): SceneQuer
 function makeTable(title: string, resource: string, drilldownSlug: string) {
   return PanelBuilders.table()
     .setTitle(title)
-    .setData(makeQueryRunner(resource))
+    .setData(withNameLinks(makeQueryRunner(resource), `\${__url.path}/${drilldownSlug}/\${__value.text}\${__url.params}`))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
-    .setOverrides((b) => {
-      b.matchFieldsWithName('name').overrideLinks([
-        {
-          title: `View ${title}`,
-          url: `\${__url.path}/${drilldownSlug}/\${__value.text}\${__url.params}`,
-        },
-      ]);
-    })
+    .build();
+}
+
+function makeNamespacedTable(title: string, resource: string, drilldownSlug: string) {
+  return PanelBuilders.table()
+    .setTitle(title)
+    .setData(withNameLinks(makeQueryRunner(resource), `\${__url.path}/${drilldownSlug}/\${__data.fields["Namespace"]}/\${__value.text}\${__url.params}`))
+    .setOption('sortBy', [{ displayName: 'name', desc: false }])
     .build();
 }
 
@@ -73,7 +74,7 @@ export function getNamespacesTable() {
 }
 
 export function getNetworkPoliciesTable() {
-  return makeTable('Network Policies', 'networkpolicies', 'networkpolicy');
+  return makeNamespacedTable('Network Policies', 'networkpolicies', 'networkpolicy');
 }
 
 export function getNodesTable() {
@@ -85,13 +86,13 @@ export function getPersistentVolumesTable() {
 }
 
 export function getRoleBindingsTable() {
-  return makeTable('Role Bindings', 'rolebindings', 'rolebinding');
+  return makeNamespacedTable('Role Bindings', 'rolebindings', 'rolebinding');
 }
 
 export function getRolesTable() {
-  return makeTable('Roles', 'roles', 'role');
+  return makeNamespacedTable('Roles', 'roles', 'role');
 }
 
 export function getServiceAccountsTable() {
-  return makeTable('Service Accounts', 'serviceaccounts', 'serviceaccount');
+  return makeNamespacedTable('Service Accounts', 'serviceaccounts', 'serviceaccount');
 }

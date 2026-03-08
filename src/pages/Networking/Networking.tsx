@@ -21,9 +21,7 @@ import {
 } from './panels';
 import {
   getServiceOverviewScene,
-  getServiceEndpointsScene,
   getIngressOverviewScene,
-  getIngressRulesScene,
   getIngressClassOverviewScene,
 } from './scenes';
 
@@ -93,58 +91,28 @@ const getNetworkingAppScene = () => {
         getScene: getNetworkingScene,
         drilldowns: [
           {
-            routePath: `${baseUrl}/service/:name`,
+            routePath: `${baseUrl}/service/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Service: ${name}`,
-                subTitle: 'Detailed view of the service and its endpoints.',
-                url: `${baseUrl}/service/${name}/overview`,
+                subTitle: `Detailed view of ${namespace}/${name}`,
+                url: `${baseUrl}/service/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () =>
-                  new EmbeddedScene({
-                    body: new SceneFlexLayout({ children: [] }),
-                  }),
-                tabs: [
-                  new SceneAppPage({
-                    title: 'Overview',
-                    url: `${baseUrl}/service/${name}/overview`,
-                    getScene: () => getServiceOverviewScene(name),
-                  }),
-                  new SceneAppPage({
-                    title: 'Endpoints',
-                    url: `${baseUrl}/service/${name}/endpoints`,
-                    getScene: () => getServiceEndpointsScene(name),
-                  }),
-                ],
+                getScene: () => getServiceOverviewScene(namespace, name),
               });
             },
           },
           {
-            routePath: `${baseUrl}/ingress/:name`,
+            routePath: `${baseUrl}/ingress/:namespace/:name`,
             getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
+              const { namespace, name } = routeMatch.params;
               return new SceneAppPage({
                 title: `Ingress: ${name}`,
-                subTitle: 'Detailed view of the ingress and its routing rules.',
-                url: `${baseUrl}/ingress/${name}/overview`,
+                subTitle: `Detailed view of ${namespace}/${name}`,
+                url: `${baseUrl}/ingress/${namespace}/${name}`,
                 getParentPage: () => parent,
-                getScene: () =>
-                  new EmbeddedScene({
-                    body: new SceneFlexLayout({ children: [] }),
-                  }),
-                tabs: [
-                  new SceneAppPage({
-                    title: 'Overview',
-                    url: `${baseUrl}/ingress/${name}/overview`,
-                    getScene: () => getIngressOverviewScene(name),
-                  }),
-                  new SceneAppPage({
-                    title: 'Rules',
-                    url: `${baseUrl}/ingress/${name}/rules`,
-                    getScene: () => getIngressRulesScene(name),
-                  }),
-                ],
+                getScene: () => getIngressOverviewScene(namespace, name),
               });
             },
           },

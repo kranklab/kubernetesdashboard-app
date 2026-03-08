@@ -1,19 +1,23 @@
 import {
   EmbeddedScene,
-  PanelBuilders,
   SceneControlsSpacer,
   SceneFlexItem,
   SceneFlexLayout,
   SceneRefreshPicker,
   SceneVariableSet,
   DataSourceVariable,
-  QueryVariable,
-  VariableValueSelectors,
 } from '@grafana/scenes';
 import { makeDetailQueryRunner } from './panels';
 import { MetadataHeader } from '../Home/MetadataHeader';
+import { ResourceInfoSection } from '../Home/ResourceInfoSection';
+import { ConditionsSection } from '../Home/ConditionsSection';
+import { EventsSection } from '../Home/EventsSection';
+import { EndpointsSection } from '../Home/EndpointsSection';
+import { PodsSection } from '../Home/PodsSection';
+import { IngressesListSection } from '../Home/IngressesListSection';
+import { RulesSection } from '../Home/RulesSection';
 
-function makeVariables() {
+function makeClusterVariable() {
   return new SceneVariableSet({
     variables: [
       new DataSourceVariable({
@@ -21,67 +25,67 @@ function makeVariables() {
         pluginId: 'kranklab-kubernetes-datasource',
         label: 'Cluster',
       }),
-      new QueryVariable({
-        name: 'namespace',
-        label: 'Namespace',
-        datasource: {
-          type: 'kranklab-kubernetes-datasource',
-          uid: '${ds}',
-        },
-        query: {
-          refId: 'namespaces',
-          action: 'list',
-          resource: 'namespaces',
-        },
-        includeAll: true,
-        defaultToAll: true,
-        allValue: '_all',
-      }),
     ],
   });
 }
 
-function makeDetailScene(title: string, resource: string, name: string) {
+export function getServiceOverviewScene(namespace: string, name: string) {
   return new EmbeddedScene({
-    $variables: makeVariables(),
-    $data: makeDetailQueryRunner(resource, name),
+    $variables: makeClusterVariable(),
+    $data: makeDetailQueryRunner('services', namespace, name),
     body: new SceneFlexLayout({
       direction: 'column',
       children: [
         new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
-        new SceneFlexItem({
-          ySizing: 'fill',
-          body: PanelBuilders.table()
-            .setTitle(title)
-            .setDisplayMode('transparent')
-            .build(),
-        }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new EndpointsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new PodsSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new IngressesListSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new EventsSection({}) }),
       ],
     }),
     controls: [
-      new VariableValueSelectors({}),
       new SceneControlsSpacer(),
       new SceneRefreshPicker({}),
     ],
   });
 }
 
-export function getServiceOverviewScene(name: string) {
-  return makeDetailScene(`Service: ${name}`, 'services', name);
-}
-
-export function getServiceEndpointsScene(name: string) {
-  return makeDetailScene(`Endpoints: ${name}`, 'endpoints', name);
-}
-
-export function getIngressOverviewScene(name: string) {
-  return makeDetailScene(`Ingress: ${name}`, 'ingresses', name);
-}
-
-export function getIngressRulesScene(name: string) {
-  return makeDetailScene(`Rules: ${name}`, 'ingressrules', name);
+export function getIngressOverviewScene(namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: makeDetailQueryRunner('ingresses', namespace, name),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new RulesSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new EventsSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
 }
 
 export function getIngressClassOverviewScene(name: string) {
-  return makeDetailScene(`Ingress Class: ${name}`, 'ingressclasses', name);
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: makeDetailQueryRunner('ingressclasses', '', name),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new ConditionsSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
 }
