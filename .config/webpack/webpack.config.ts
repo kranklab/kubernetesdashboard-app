@@ -79,7 +79,7 @@ const config = async (env): Promise<Configuration> => {
       ({ request }, callback) => {
         const prefix = 'grafana/';
         const hasPrefix = (request) => request.indexOf(prefix) === 0;
-        const stripPrefix = (request) => request.substr(prefix.length);
+        const stripPrefix = (request) => request.substring(prefix.length);
 
         if (hasPrefix(request)) {
           return callback(undefined, stripPrefix(request));
