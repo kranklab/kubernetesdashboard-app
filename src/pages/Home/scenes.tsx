@@ -26,6 +26,9 @@ import { HPASection } from './HPASection';
 import { PodsSection } from './PodsSection';
 import { ServicesSection } from './ServicesSection';
 import { JobsSection } from './JobsSection';
+import { EndpointsSection } from './EndpointsSection';
+import { RulesSection } from './RulesSection';
+import { IngressesListSection } from './IngressesListSection';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
