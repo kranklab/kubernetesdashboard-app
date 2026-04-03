@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SceneObjectBase, SceneObjectState, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, DataFrame, dateTime } from '@grafana/data';
@@ -140,6 +140,48 @@ function ReplicaSetCard({
   );
 }
 
+const INITIAL_OLD_RS_COUNT = 3;
+
+function OldReplicaSets({ oldRSes, styles }: { oldRSes: ReplicaSet[]; styles: ReturnType<typeof getStyles> }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? oldRSes : oldRSes.slice(0, INITIAL_OLD_RS_COUNT);
+  const hiddenCount = oldRSes.length - INITIAL_OLD_RS_COUNT;
+
+  return (
+    <CollapsibleSection title={`Old Replica Sets (${oldRSes.length})`} defaultCollapsed>
+      {oldRSes.length === 0 ? (
+        <div className={styles.emptyState}>
+          There is nothing to display here
+          <br />
+          No resources found.
+        </div>
+      ) : (
+        <>
+          {visible.map((rs) => (
+            <ReplicaSetCard key={rs.name} rs={rs} styles={styles} />
+          ))}
+          {hiddenCount > 0 && !showAll && (
+            <button
+              onClick={() => setShowAll(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
+                padding: '8px 0',
+                fontSize: '13px',
+                opacity: 0.7,
+              }}
+            >
+              Show {hiddenCount} more...
+            </button>
+          )}
+        </>
+      )}
+    </CollapsibleSection>
+  );
+}
+
 function ReplicaSetsRenderer({ model }: SceneComponentProps<ReplicaSetsSection>) {
   const styles = useStyles2(getStyles);
   const { data } = sceneGraph.getData(model).useState();
@@ -166,17 +208,7 @@ function ReplicaSetsRenderer({ model }: SceneComponentProps<ReplicaSetsSection>)
           newRS.map((rs) => <ReplicaSetCard key={rs.name} rs={rs} styles={styles} />)
         )}
       </CollapsibleSection>
-      <CollapsibleSection title="Old Replica Sets" defaultCollapsed={oldRSes.length === 0}>
-        {oldRSes.length === 0 ? (
-          <div className={styles.emptyState}>
-            There is nothing to display here
-            <br />
-            No resources found.
-          </div>
-        ) : (
-          oldRSes.map((rs) => <ReplicaSetCard key={rs.name} rs={rs} styles={styles} />)
-        )}
-      </CollapsibleSection>
+      <OldReplicaSets oldRSes={oldRSes} styles={styles} />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 
 import {
-    DataSourceVariable,
     EmbeddedScene,
     PanelBuilders,
     SceneApp,
@@ -12,7 +11,6 @@ import {
     SceneGridRow,
     SceneQueryRunner,
     SceneVariableSet,
-    QueryVariable,
     VariableValueSelectors,
     SceneRefreshPicker,
 } from '@grafana/scenes';
@@ -26,7 +24,8 @@ import {
 import { prefixRoute } from '../../utils/utils.routing';
 import { PLUGIN_BASE_URL, ROUTES } from '../../constants';
 import { withNameLinks } from '../../utils/utils.links';
-import { getWorkloadOverviewScene, getWorkloadEventsScene } from './scenes';
+import { createDatasourceVariable, createNamespaceVariable } from '../../utils/utils.datasource';
+import { getWorkloadOverviewScene, getWorkloadEventsScene, getWorkloadLogsScene, getWorkloadYamlScene } from './scenes';
 
 type ResourceName = 'pods' | 'deployments' | 'replicasets' | 'daemonsets' | 'statefulsets' | 'jobs' | 'cronjobs';
 
@@ -105,28 +104,9 @@ function makeQueryRunner(resource: string): SceneQueryRunner {
 }
 
 const getHomeScene = () => {
-    const dsVariable = new DataSourceVariable({
-        name: 'ds',
-        pluginId: 'kranklab-kubernetes-datasource',
-        label: 'Cluster',
-    });
+    const dsVariable = createDatasourceVariable();
 
-    const namespaceVariable = new QueryVariable({
-        name: 'namespace',
-        label: 'Namespace',
-        datasource: {
-            type: 'kranklab-kubernetes-datasource',
-            uid: '${ds}',
-        },
-        query: {
-            refId: 'namespaces',
-            action: 'list',
-            resource: 'namespaces',
-        },
-        includeAll: true,
-        defaultToAll: true,
-        allValue: '_all',
-    });
+    const namespaceVariable = createNamespaceVariable();
 
     // Each resource gets two runners: one for the stat card, one for the table
     const statRunners: Record<string, SceneQueryRunner> = {};
@@ -144,7 +124,7 @@ const getHomeScene = () => {
             resource,
             withNameLinks(
                 tableRunners[resource],
-                `${PLUGIN_BASE_URL}/${ROUTES.Home}/workload/${resource}/\${__data.fields["Namespace"]}/\${__value.text}/overview`
+                `${PLUGIN_BASE_URL}/${ROUTES.Home}/workload/${resource}/\${__data.fields["Namespace"]}/\${__value.text}/overview\${__url.params}`
             ),
         ])
     );
@@ -351,6 +331,20 @@ const getScene = () => {
                                         title: 'Overview',
                                         url: `${baseUrl}/overview`,
                                         getScene: () => getWorkloadOverviewScene(type, namespace, name),
+                                    }),
+                                    ...(type === 'pods'
+                                        ? [
+                                              new SceneAppPage({
+                                                  title: 'Logs',
+                                                  url: `${baseUrl}/logs`,
+                                                  getScene: () => getWorkloadLogsScene(namespace, name),
+                                              }),
+                                          ]
+                                        : []),
+                                    new SceneAppPage({
+                                        title: 'YAML',
+                                        url: `${baseUrl}/yaml`,
+                                        getScene: () => getWorkloadYamlScene(type, namespace, name),
                                     }),
                                     new SceneAppPage({
                                         title: 'Events',

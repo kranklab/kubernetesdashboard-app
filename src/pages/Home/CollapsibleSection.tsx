@@ -120,6 +120,13 @@ export function getSectionStyles(theme: GrafanaTheme2) {
     statusFalse: css`
       color: ${theme.colors.warning.text};
     `,
+    link: css`
+      color: ${theme.colors.text.link};
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    `,
   };
 }
 

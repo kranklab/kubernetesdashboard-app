@@ -1,6 +1,5 @@
 import {
   CustomVariable,
-  DataSourceVariable,
   EmbeddedScene,
   PanelBuilders,
   SceneControlsSpacer,
@@ -14,6 +13,7 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import { DATASOURCE_REF } from '../../constants';
+import { createDatasourceVariable } from '../../utils/utils.datasource';
 import { CustomSceneObject } from './CustomSceneObject';
 import { MetadataHeader } from './MetadataHeader';
 import { ResourceInfoSection } from './ResourceInfoSection';
@@ -29,16 +29,12 @@ import { JobsSection } from './JobsSection';
 import { EndpointsSection } from './EndpointsSection';
 import { RulesSection } from './RulesSection';
 import { IngressesListSection } from './IngressesListSection';
+import { LogsSection } from './LogsSection';
+import { YamlSection } from './YamlSection';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
-    variables: [
-      new DataSourceVariable({
-        name: 'ds',
-        pluginId: 'kranklab-kubernetes-datasource',
-        label: 'Cluster',
-      }),
-    ],
+    variables: [createDatasourceVariable()],
   });
 }
 
@@ -65,18 +61,76 @@ export function getWorkloadOverviewScene(type: string, namespace: string, name: 
       children: [
         new SceneFlexItem({ ySizing: 'content', body: new MetadataHeader({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ResourceInfoSection({}) }),
+        new SceneFlexItem({ ySizing: 'content', body: new PodsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ContainersSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ConditionsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ControlledBySection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ReplicaSetsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new HPASection({}) }),
-        new SceneFlexItem({ ySizing: 'content', body: new PodsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new ServicesSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new EndpointsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new RulesSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new IngressesListSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new JobsSection({}) }),
         new SceneFlexItem({ ySizing: 'content', body: new EventsSection({}) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
+}
+
+export function getWorkloadLogsScene(namespace: string, name: string) {
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [
+        {
+          refId: 'A',
+          action: 'logs',
+          resource: 'pods',
+          namespace,
+          name,
+        },
+      ],
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new LogsSection({ podName: name, namespace }) }),
+      ],
+    }),
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({}),
+    ],
+  });
+}
+
+export function getWorkloadYamlScene(type: string, namespace: string | null, name: string) {
+  const query: any = { refId: 'A', action: 'yaml', resource: type, name };
+  if (namespace) {
+    query.namespace = namespace;
+  }
+  return new EmbeddedScene({
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: {
+        type: 'kranklab-kubernetes-datasource',
+        uid: '${ds}',
+      },
+      queries: [query],
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({ ySizing: 'content', body: new YamlSection({}) }),
       ],
     }),
     controls: [
@@ -117,7 +171,6 @@ export function getWorkloadEventsScene(namespace: string, name: string) {
       ],
     }),
     controls: [
-      new VariableValueSelectors({}),
       new SceneControlsSpacer(),
       new SceneRefreshPicker({}),
     ],

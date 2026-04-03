@@ -30,7 +30,7 @@
     {
       "type": "page",
       "name": "Workloads",
-      "path": "/a/%PLUGIN_ID%/fasg",
+      "path": "/a/%PLUGIN_ID%/workloads",
       "addToNav": true,
       "defaultNav": false
     },

@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
 import {
-  DataSourceVariable,
   EmbeddedScene,
-  PanelBuilders,
   SceneApp,
   SceneAppPage,
   SceneControlsSpacer,
@@ -15,24 +13,19 @@ import {
 } from '@grafana/scenes';
 import { prefixRoute } from '../../utils/utils.routing';
 import { ROUTES } from '../../constants';
-import { withNameLinks } from '../../utils/utils.links';
+import { createDatasourceVariable } from '../../utils/utils.datasource';
+import { getWorkloadYamlScene } from '../Home/scenes';
 import { MetadataHeader } from '../Home/MetadataHeader';
 import { ResourceInfoSection } from '../Home/ResourceInfoSection';
 import { CRDNamesSection } from '../Home/CRDNamesSection';
 import { CRDVersionsSection } from '../Home/CRDVersionsSection';
 import { ConditionsSection } from '../Home/ConditionsSection';
-
-const TABLE_HEIGHT = 500;
+import { ResourceCards } from '../../components/ResourceCards/ResourceCards';
+import { makeCardsScene } from '../../components/ResourceCards/makeCardsScene';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
-    variables: [
-      new DataSourceVariable({
-        name: 'ds',
-        pluginId: 'kranklab-kubernetes-datasource',
-        label: 'Cluster',
-      }),
-    ],
+    variables: [createDatasourceVariable()],
   });
 }
 
@@ -40,18 +33,8 @@ function getCRDDetailScene(name: string) {
   return new EmbeddedScene({
     $variables: makeClusterVariable(),
     $data: new SceneQueryRunner({
-      datasource: {
-        type: 'kranklab-kubernetes-datasource',
-        uid: '${ds}',
-      },
-      queries: [
-        {
-          refId: 'A',
-          action: 'get',
-          resource: 'customresourcedefinitions',
-          name,
-        },
-      ],
+      datasource: { type: 'kranklab-kubernetes-datasource', uid: '${ds}' },
+      queries: [{ refId: 'A', action: 'get', resource: 'customresourcedefinitions', name }],
       maxDataPoints: 100,
     }),
     body: new SceneFlexLayout({
@@ -64,22 +47,18 @@ function getCRDDetailScene(name: string) {
         new SceneFlexItem({ ySizing: 'content', body: new ConditionsSection({}) }),
       ],
     }),
-    controls: [
-      new SceneControlsSpacer(),
-      new SceneRefreshPicker({}),
-    ],
+    controls: [new SceneControlsSpacer(), new SceneRefreshPicker({})],
   });
 }
 
-const getCRDsScene = () => {
-  const dsVariable = new DataSourceVariable({
-    name: 'ds',
-    pluginId: 'kranklab-kubernetes-datasource',
-    label: 'Cluster',
-  });
-
+function getCRDsCardsScene(baseUrl: string) {
   return new EmbeddedScene({
-    $variables: new SceneVariableSet({ variables: [dsVariable] }),
+    $variables: makeClusterVariable(),
+    $data: new SceneQueryRunner({
+      datasource: { type: 'kranklab-kubernetes-datasource', uid: '${ds}' },
+      queries: [{ refId: 'A', action: 'list', resource: 'customresourcedefinitions' }],
+      maxDataPoints: 100,
+    }),
     controls: [
       new VariableValueSelectors({}),
       new SceneControlsSpacer(),
@@ -89,38 +68,58 @@ const getCRDsScene = () => {
       direction: 'column',
       children: [
         new SceneFlexItem({
-          height: TABLE_HEIGHT,
-          body: PanelBuilders.table()
-            .setTitle('Custom Resource Definitions')
-            .setData(
-              withNameLinks(
-                new SceneQueryRunner({
-                  datasource: {
-                    type: 'kranklab-kubernetes-datasource',
-                    uid: '${ds}',
-                  },
-                  queries: [
-                    {
-                      refId: 'A',
-                      action: 'list',
-                      resource: 'customresourcedefinitions',
-                    },
-                  ],
-                  maxDataPoints: 100,
-                }),
-                '${__url.path}/crd/${__value.text}${__url.params}'
-              )
-            )
-            .setOption('sortBy', [{ displayName: 'name', desc: false }])
-            .build(),
+          ySizing: 'content',
+          body: new ResourceCards({
+            resourceType: 'customresourcedefinitions',
+            drilldownUrl: `${baseUrl}/crd/\${name}`,
+          }),
         }),
       ],
     }),
   });
-};
+}
+
+// Traefik CRD tabs — resource names match the plural form used by the K8s API
+const TRAEFIK_TABS = [
+  { title: 'Traefik Services', resource: 'traefikservices' },
+  { title: 'Middlewares', resource: 'middlewares' },
+  { title: 'Ingress Routes', resource: 'ingressroutes' },
+];
 
 const getCRDsAppScene = () => {
   const baseUrl = prefixRoute(ROUTES.CRDs);
+
+  const drilldowns = [
+    {
+      routePath: `${baseUrl}/crd/:name`,
+      getPage(routeMatch: any, parent: any) {
+        const { name } = routeMatch.params;
+        return new SceneAppPage({
+          title: `CRD: ${name}`,
+          url: `${baseUrl}/crd/${name}`,
+          getParentPage: () => parent,
+          getScene: () => getCRDDetailScene(name),
+          tabs: [
+            new SceneAppPage({ title: 'Overview', url: `${baseUrl}/crd/${name}/overview`, getScene: () => getCRDDetailScene(name) }),
+            new SceneAppPage({ title: 'YAML', url: `${baseUrl}/crd/${name}/yaml`, getScene: () => getWorkloadYamlScene('customresourcedefinitions', null, name) }),
+          ],
+        });
+      },
+    },
+    {
+      routePath: `${baseUrl}/cr/:resource/:namespace/:name`,
+      getPage(routeMatch: any, parent: any) {
+        const { resource, namespace, name } = routeMatch.params;
+        return new SceneAppPage({
+          title: `${resource}: ${name}`,
+          subTitle: `${namespace}/${name}`,
+          url: `${baseUrl}/cr/${resource}/${namespace}/${name}`,
+          getParentPage: () => parent,
+          getScene: () => getWorkloadYamlScene(resource, namespace, name),
+        });
+      },
+    },
+  ];
 
   return new SceneApp({
     pages: [
@@ -128,22 +127,28 @@ const getCRDsAppScene = () => {
         title: 'Custom Resource Definitions',
         subTitle: 'All CRDs registered in the cluster.',
         url: baseUrl,
-        hideFromBreadcrumbs: true,
-        getScene: getCRDsScene,
-        drilldowns: [
-          {
-            routePath: `${baseUrl}/crd/:name`,
-            getPage(routeMatch, parent) {
-              const { name } = routeMatch.params;
-              return new SceneAppPage({
-                title: `CRD: ${name}`,
-                url: `${baseUrl}/crd/${name}`,
-                getParentPage: () => parent,
-                getScene: () => getCRDDetailScene(name),
-              });
-            },
-          },
+        hideFromBreadcrumbs: false,
+        getScene: () => getCRDsCardsScene(baseUrl),
+        tabs: [
+          new SceneAppPage({
+            title: 'Definitions',
+            url: `${baseUrl}/definitions`,
+            getScene: () => getCRDsCardsScene(baseUrl),
+          }),
+          ...TRAEFIK_TABS.map(
+            (tab) =>
+              new SceneAppPage({
+                title: tab.title,
+                url: `${baseUrl}/${tab.resource}`,
+                getScene: () => makeCardsScene({
+                  resource: tab.resource,
+                  resourceType: tab.resource,
+                  drilldownUrl: `${baseUrl}/cr/${tab.resource}/\${namespace}/\${name}`,
+                }),
+              })
+          ),
         ],
+        drilldowns,
       }),
     ],
   });

@@ -4,6 +4,7 @@ export const PLUGIN_BASE_URL = `/a/${pluginJson.id}`;
 
 export enum ROUTES {
   Home = 'home',
+  Workloads = 'workloads',
   Networking = 'networking',
   ConfigStorage = 'config-storage',
   Cluster = 'cluster',

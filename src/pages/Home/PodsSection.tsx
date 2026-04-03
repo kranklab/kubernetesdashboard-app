@@ -3,6 +3,7 @@ import { SceneObjectBase, SceneObjectState, SceneComponentProps, sceneGraph } fr
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { GrafanaTheme2, DataFrame, dateTime } from '@grafana/data';
 import { CollapsibleSection, getSectionStyles, labelColor } from './CollapsibleSection';
+import { PLUGIN_BASE_URL, ROUTES } from '../../constants';
 
 function parseJson(val: any): any {
   if (!val) {
@@ -129,7 +130,14 @@ function PodsSectionRenderer({ model }: SceneComponentProps<PodsSection>) {
           <tbody>
             {pods.map((pod, i) => (
               <tr key={i}>
-                <td className={styles.td}>{pod.name}</td>
+                <td className={styles.td}>
+                  <a
+                    href={`${PLUGIN_BASE_URL}/${ROUTES.Workloads}/pods/${pod.namespace}/${pod.name}/overview`}
+                    className={styles.link}
+                  >
+                    {pod.name}
+                  </a>
+                </td>
                 <td className={styles.td}>
                   <div className={styles.chipsRow}>
                     {pod.images.map((img, j) => (

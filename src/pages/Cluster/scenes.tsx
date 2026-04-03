@@ -1,5 +1,4 @@
 import {
-  DataSourceVariable,
   EmbeddedScene,
   SceneControlsSpacer,
   SceneFlexItem,
@@ -8,6 +7,7 @@ import {
   SceneRefreshPicker,
   SceneVariableSet,
 } from '@grafana/scenes';
+import { createDatasourceVariable } from '../../utils/utils.datasource';
 import { MetadataHeader } from '../Home/MetadataHeader';
 import { ResourceInfoSection } from '../Home/ResourceInfoSection';
 import { ConditionsSection } from '../Home/ConditionsSection';
@@ -15,17 +15,12 @@ import { RBACRulesSection } from '../Home/RBACRulesSection';
 import { SubjectsSection } from '../Home/SubjectsSection';
 import { ServiceAccountSection } from '../Home/ServiceAccountSection';
 import { NodeSystemInfoSection } from '../Home/NodeSystemInfoSection';
+import { PodsSection } from '../Home/PodsSection';
 import { PVSourceSection } from '../Home/PVSourceSection';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
-    variables: [
-      new DataSourceVariable({
-        name: 'ds',
-        pluginId: 'kranklab-kubernetes-datasource',
-        label: 'Cluster',
-      }),
-    ],
+    variables: [createDatasourceVariable()],
   });
 }
 
@@ -73,7 +68,7 @@ export function getNetworkPolicyDetailScene(namespace: string, name: string) {
 }
 
 export function getNodeDetailScene(name: string) {
-  return makeDetailScene('nodes', name, null, new ResourceInfoSection({}), new NodeSystemInfoSection({}), new ConditionsSection({}));
+  return makeDetailScene('nodes', name, null, new ResourceInfoSection({}), new NodeSystemInfoSection({}), new ConditionsSection({}), new PodsSection({}));
 }
 
 export function getPersistentVolumeDetailScene(name: string) {

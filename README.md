@@ -1,22 +1,53 @@
-# Grafana Scenes App Plugin Template
+# Kubernetes Dashboard for Grafana
 
-This template is a starting point for building an app plugin with [scenes](https://grafana.com/developers/scenes) for Grafana.
+A Grafana app plugin that provides a comprehensive Kubernetes cluster dashboard built with [@grafana/scenes](https://github.com/grafana/scenes). Browse, search, and inspect all Kubernetes resources through a card-based UI with drilldown detail views.
 
-## What are Grafana app plugins?
+## Features
 
-App plugins can let you create a custom out-of-the-box monitoring experience by custom pages, nested datasources and panel plugins.
+### Resource browsing
 
-## What is @grafana/scenes?
+Every resource type is presented as paginated, searchable cards with expand-on-click details.
 
-[@grafana/scenes](https://github.com/grafana/scenes) is a framework to enable versatile app plugins implementation. It provides an easy way to build apps that resemble Grafana's dashboarding experience, including template variables support, versatile layouts, panels rendering and more.
+- **Workloads** — Pods, Deployments, Replica Sets, Daemon Sets, Stateful Sets, Jobs, Cron Jobs
+- **Networking** — Services, Ingresses, Ingress Classes
+- **Config & Storage** — Config Maps, Persistent Volume Claims, Secrets, Storage Classes
+- **Cluster** — Nodes, Namespaces, Events, Roles, Role Bindings, Cluster Roles, Cluster Role Bindings, Service Accounts, Network Policies, Persistent Volumes
+- **Custom Resource Definitions** — All CRDs with dedicated tabs for Traefik resources (IngressRoutes, Middlewares, TraefikServices)
 
-To learn more about @grafana/scenes usage please refer to the [documentation](https://grafana.com/developers/scenes)
+### Detail views
 
-## What does this template contain?
+Click any resource name to drill down into a detail view with tabs for:
 
-1. An example of a simple scene. See [Home scene](./src/pages/Home/Home.tsx)
-1. An example of a scene with tabs. See [Scene with tabs](./src/pages/WithTabs/WithTabs.tsx)
-1. An example of a scene with drill down. See [Scene with drill down](./src/pages/WithDrilldown/WithDrilldown.tsx)
+- **Overview** — Metadata, labels, annotations, resource-specific information, conditions, containers, related resources
+- **YAML** — Raw YAML manifest
+- **Logs** — Live pod logs with container filtering, search, log-level color indicators, and a direct link to Loki Explore
+- **Events** — Kubernetes events for the resource
+
+### Cards
+
+Resource cards show key information at a glance:
+
+- Status badges with color coding (Ready/NotReady, Running/Pending/Failed, Bound/Available, etc.)
+- Resource-specific stats (replica counts, node info, capacity, ports, schedules)
+- Expandable chip lists for images, labels, ports, subjects, and access modes
+- Click to expand for full details, click the name to navigate to the drilldown
+
+### Search and pagination
+
+- Text search filters cards by name or namespace
+- Paginated in groups of 24 or 48 (fills the grid evenly)
+- Log search filters by message content
+
+### Observability links
+
+- **Loki** — Pod log views include an "Open in Loki" button that opens Grafana Explore with a pre-filled LogQL query (`{namespace="...", pod="..."}`) using the first available Loki datasource
+
+## Requirements
+
+- Grafana >= 12.4.0
+- [kranklab-kubernetes-datasource](https://github.com/kranklab/grafana-kubernetes-datasource) plugin installed and configured
+
+## Getting started
 
 ### Frontend
 
@@ -38,77 +69,58 @@ To learn more about @grafana/scenes usage please refer to the [documentation](ht
    npm run build
    ```
 
-4. Run the tests (using Jest)
-
-   ```bash
-   # Runs the tests and watches for changes, requires git init first
-   npm run test
-
-   # Exits after running all the tests
-   npm run test:ci
-   ```
-
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
-
-   ```bash
-   npm run server
-   ```
-
-6. Run the E2E tests (using Cypress)
-
-   ```bash
-   # Spins up a Grafana instance first that we tests against
-   npm run server
-
-   # Starts the tests
-   npm run e2e
-   ```
-
-7. Run the linter
+4. Run the linter
 
    ```bash
    npm run lint
-
-   # or
-
-   npm run lint:fix
    ```
 
-# Distributing your plugin
+### Development
 
-When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.
+The plugin source is organised as follows:
 
-_Note: It's not necessary to sign a plugin during development. The docker development environment that is scaffolded with `@grafana/create-plugin` caters for running the plugin without a signature._
+```
+src/
+  components/
+    ResourceCards/        # Shared card grid component used by all pages
+      ResourceCards.tsx   # Universal card renderer with pagination, search, expand
+      makeCardsScene.ts   # Helper to build a cards scene for any resource type
+    Routes/               # App routing
+  pages/
+    Home/                 # Cluster overview with stat cards and workload tables
+    Workloads/            # Card-based workload browsing with tabs per resource
+    Networking/           # Services, Ingresses, Ingress Classes
+    ConfigStorage/        # Config Maps, PVCs, Secrets, Storage Classes
+    Cluster/              # Cluster-scoped resources
+    CRDs/                 # Custom Resource Definitions with Traefik tabs
+  plugin.json             # Plugin metadata and navigation structure
+  constants.ts            # Route definitions
+```
 
-## Initial steps
+### Adding a new resource tab
 
-Before signing a plugin please read the Grafana [plugin publishing and signing criteria](https://grafana.com/legal/plugins/#plugin-publishing-and-signing-criteria) documentation carefully.
+To add a new resource type to an existing page, add a `SceneAppPage` tab entry in the page's scene builder using `makeCardsScene`:
 
-`@grafana/create-plugin` has added the necessary commands and workflows to make signing and distributing a plugin via the grafana plugins catalog as straightforward as possible.
+```typescript
+new SceneAppPage({
+  title: 'My Resource',
+  url: `${baseUrl}/myresource`,
+  getScene: () => makeCardsScene({
+    resource: 'myresource',        // K8s API plural name
+    resourceType: 'myresource',    // Used for card badge/stats config
+    drilldownUrl: `${baseUrl}/myresource/\${namespace}/\${name}`,
+  }),
+})
+```
 
-Before signing a plugin for the first time please consult the Grafana [plugin signature levels](https://grafana.com/legal/plugins/#what-are-the-different-classifications-of-plugins) documentation to understand the differences between the types of signature level.
+Then add badge, stats, and chips config for the new type in `ResourceCards.tsx` (`getBadge`, `getStats`, `getChips` functions).
 
-1. Create a [Grafana Cloud account](https://grafana.com/signup).
-2. Make sure that the first part of the plugin ID matches the slug of your Grafana Cloud account.
-   - _You can find the plugin ID in the `plugin.json` file inside your plugin directory. For example, if your account slug is `acmecorp`, you need to prefix the plugin ID with `acmecorp-`._
-3. Create a Grafana Cloud API key with the `PluginPublisher` role.
-4. Keep a record of this API key as it will be required for signing a plugin
+## Plugin signing
 
-## Signing a plugin
+When distributing this plugin it must be signed. See the Grafana [plugin publishing and signing criteria](https://grafana.com/legal/plugins/#plugin-publishing-and-signing-criteria) for details.
 
-### Using Github actions release workflow
+The included GitHub Actions release workflow handles signing automatically when a version tag is pushed:
 
-If the plugin is using the github actions supplied with `@grafana/create-plugin` signing a plugin is included out of the box. The [release workflow](./.github/workflows/release.yml) can prepare everything to make submitting your plugin to Grafana as easy as possible. Before being able to sign the plugin however a secret needs adding to the Github repository.
-
-1. Please navigate to "settings > secrets > actions" within your repo to create secrets.
-2. Click "New repository secret"
-3. Name the secret "GRAFANA_API_KEY"
-4. Paste your Grafana Cloud API key in the Secret field
-5. Click "Add secret"
-
-#### Push a version tag
-
-To trigger the workflow we need to push a version tag to github. This can be achieved with the following steps:
-
-1. Run `npm version <major|minor|patch>`
-2. Run `git push origin main --follow-tags`
+1. Add a `GRAFANA_API_KEY` secret to your repository (Settings > Secrets > Actions)
+2. Run `npm version <major|minor|patch>`
+3. Run `git push origin main --follow-tags`

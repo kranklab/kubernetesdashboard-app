@@ -41,36 +41,36 @@ export function makeDetailQueryRunner(resource: string, namespace: string, name:
   });
 }
 
-export function getServicesTable() {
+export function getServicesTable(baseUrl: string) {
   return PanelBuilders.table()
     .setTitle('Services')
     .setData(
       withNameLinks(
         makeQueryRunner('services'),
-        '${__url.path}/service/${__data.fields["Namespace"]}/${__value.text}${__url.params}'
+        `${baseUrl}/service/\${__data.fields["Namespace"]}/\${__value.text}\${__url.params}`
       )
     )
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
     .build();
 }
 
-export function getIngressesTable() {
+export function getIngressesTable(baseUrl: string) {
   return PanelBuilders.table()
     .setTitle('Ingresses')
     .setData(
       withNameLinks(
         makeQueryRunner('ingresses'),
-        '${__url.path}/ingress/${__data.fields["Namespace"]}/${__value.text}${__url.params}'
+        `${baseUrl}/ingress/\${__data.fields["Namespace"]}/\${__value.text}\${__url.params}`
       )
     )
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
     .build();
 }
 
-export function getIngressClassesTable() {
+export function getIngressClassesTable(baseUrl: string) {
   return PanelBuilders.table()
     .setTitle('Ingress Classes')
-    .setData(withNameLinks(makeQueryRunner('ingressclasses'), '${__url.path}/ingressclass/${__value.text}${__url.params}'))
+    .setData(withNameLinks(makeQueryRunner('ingressclasses'), `${baseUrl}/ingressclass/\${__value.text}\${__url.params}`))
     .setOption('sortBy', [{ displayName: 'name', desc: false }])
     .build();
 }

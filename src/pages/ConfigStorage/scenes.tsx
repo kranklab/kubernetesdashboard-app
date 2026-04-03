@@ -1,5 +1,4 @@
 import {
-  DataSourceVariable,
   EmbeddedScene,
   SceneControlsSpacer,
   SceneFlexItem,
@@ -8,6 +7,7 @@ import {
   SceneRefreshPicker,
   SceneVariableSet,
 } from '@grafana/scenes';
+import { createDatasourceVariable } from '../../utils/utils.datasource';
 import { MetadataHeader } from '../Home/MetadataHeader';
 import { ResourceInfoSection } from '../Home/ResourceInfoSection';
 import { DataSection } from '../Home/DataSection';
@@ -16,13 +16,7 @@ import { PersistentVolumesSection } from '../Home/PersistentVolumesSection';
 
 function makeClusterVariable() {
   return new SceneVariableSet({
-    variables: [
-      new DataSourceVariable({
-        name: 'ds',
-        pluginId: 'kranklab-kubernetes-datasource',
-        label: 'Cluster',
-      }),
-    ],
+    variables: [createDatasourceVariable()],
   });
 }
 
