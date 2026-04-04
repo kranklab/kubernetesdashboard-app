@@ -130,7 +130,7 @@ jobs:
         id: resolve-versions
         uses: grafana/plugin-actions/e2e-version@main
         with:
-          skip-grafana-dev: true
+          skip-grafana-dev-image: true
 
   playwright-tests:
     needs: [resolve-versions, build]
