@@ -998,7 +998,7 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
   }
 
   // Build sort options from available fields
-  const sortOptions: { value: string; label: string }[] = [
+  const sortOptions: Array<{ value: string; label: string }> = [
     { value: 'name', label: 'Name' },
     { value: 'namespace', label: 'Namespace' },
     { value: 'age-asc', label: 'Newest first' },
