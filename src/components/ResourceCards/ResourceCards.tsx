@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { css } from '@emotion/css';
 import { SceneObjectBase, SceneObjectState, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { GrafanaTheme2, DataFrame, dateTime } from '@grafana/data';
 import { PLUGIN_BASE_URL, ROUTES } from '../../constants';
+import { RbacPermissions, fetchPermissions } from '../../utils/rbac';
+import { ResourceActions } from '../ResourceActions/ResourceActions';
 
 // Generic row: pulls every possible field from the data frame.
 // Missing fields are undefined — card renderers handle that gracefully.
@@ -779,6 +781,9 @@ interface CardProps {
   href?: string;
   forceExpand?: boolean | null;
   onLocalToggle?: () => void;
+  dsUid?: string;
+  permissions?: RbacPermissions | null;
+  onActionComplete?: (message: string, success: boolean) => void;
 }
 
 function CardHeader({ row, badge, stats, styles, theme, href, expanded }: {
@@ -835,9 +840,11 @@ const IMAGE_RESOURCE_TYPES = new Set([
   'pods', 'deployments', 'replicasets', 'daemonsets', 'statefulsets', 'jobs', 'cronjobs',
 ]);
 
-function CardDetails({ row, resourceType, stats, chips, styles }: {
+function CardDetails({ row, resourceType, stats, chips, styles, dsUid, permissions, onActionComplete }: {
   row: ResourceRow; resourceType: string; stats: StatItem[]; chips: string[];
   styles: ReturnType<typeof getStyles>;
+  dsUid?: string; permissions?: RbacPermissions | null;
+  onActionComplete?: (message: string, success: boolean) => void;
 }) {
   const [chipsExpanded, setChipsExpanded] = useState(false);
   const visibleChips = chipsExpanded ? chips : chips.slice(0, 1);
@@ -937,12 +944,23 @@ function CardDetails({ row, resourceType, stats, chips, styles }: {
       {resourceType === 'events' && row['Message'] && (
         <div className={styles.message} title={row['Message']}>{row['Message']}</div>
       )}
+      {dsUid && permissions && permissions.canWrite && (
+        <ResourceActions
+          dsUid={dsUid}
+          permissions={permissions}
+          namespace={row.namespace}
+          resource={resourceType}
+          name={row.name}
+          currentReplicas={row['Target'] ?? row['Available']}
+          onActionComplete={onActionComplete}
+        />
+      )}
       {row.created && <div className={styles.age}>Created {formatAge(row.created)}</div>}
     </>
   );
 }
 
-function ResourceCard({ row, resourceType, styles, theme, href, forceExpand, onLocalToggle }: CardProps) {
+function ResourceCard({ row, resourceType, styles, theme, href, forceExpand, onLocalToggle, dsUid, permissions, onActionComplete }: CardProps) {
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = forceExpand != null ? forceExpand : localExpanded;
   const badge = getBadge(row, resourceType, theme);
@@ -961,7 +979,7 @@ function ResourceCard({ row, resourceType, styles, theme, href, forceExpand, onL
     <div className={styles.card} style={{ borderLeftColor: badge?.color ?? 'transparent' }} onClick={toggleExpand}>
       <CardHeader row={row} badge={badge} stats={stats} styles={styles} theme={theme} href={href} expanded={expanded} />
       {expanded && (
-        <CardDetails row={row} resourceType={resourceType} stats={stats} chips={chips} styles={styles} />
+        <CardDetails row={row} resourceType={resourceType} stats={stats} chips={chips} styles={styles} dsUid={dsUid} permissions={permissions} onActionComplete={onActionComplete} />
       )}
     </div>
   );
@@ -986,6 +1004,29 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
   const [sortBy, setSortBy] = useState('name');
   const [sortOpen, setSortOpen] = useState(false);
+  const [permissions, setPermissions] = useState<RbacPermissions | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  // Resolve datasource UID from the scene variable
+  const dsUid = sceneGraph.interpolate(model, '${ds}');
+
+  useEffect(() => {
+    if (!dsUid) {
+      return;
+    }
+    let cancelled = false;
+    fetchPermissions(dsUid).then((p) => {
+      if (!cancelled) {
+        setPermissions(p);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [dsUid]);
+
+  const handleActionComplete = (message: string, _success: boolean) => {
+    setActionFeedback(message);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
 
   const allRows = extractRows(data);
 
@@ -1137,10 +1178,23 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
             ?.replace('${name}', encodeURIComponent(row.name));
 
           return (
-            <ResourceCard key={i} row={row} resourceType={resourceType} styles={styles} theme={theme} href={href} forceExpand={expandAll} onLocalToggle={() => setExpandAll(null)} />
+            <ResourceCard key={i} row={row} resourceType={resourceType} styles={styles} theme={theme} href={href} forceExpand={expandAll} onLocalToggle={() => setExpandAll(null)} dsUid={dsUid} permissions={permissions} onActionComplete={handleActionComplete} />
           );
         })}
       </div>
+      {actionFeedback && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 2000,
+          padding: '8px 16px', borderRadius: 4,
+          background: theme.colors.background.secondary,
+          border: `1px solid ${theme.colors.border.medium}`,
+          boxShadow: theme.shadows.z3,
+          fontSize: theme.typography.body.fontSize,
+          color: theme.colors.text.primary,
+        }}>
+          {actionFeedback}
+        </div>
+      )}
     </div>
   );
 }
