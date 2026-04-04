@@ -2,6 +2,7 @@ import React from 'react';
 import { SceneObjectBase, SceneObjectState, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, DataFrame, dateTime } from '@grafana/data';
+import { css } from '@emotion/css';
 import { CollapsibleSection, getSectionStyles, labelColor } from './CollapsibleSection';
 
 export function getFieldValue(frame: DataFrame, ...fieldNames: string[]): any {
@@ -127,9 +128,61 @@ function formatAge(ts: string | number | undefined): string {
   }
 }
 
+const SOURCE_ANNOTATION = 'app.kubernetes.io/source-url';
+
+function getOpenTraceUrl(sourceUrl: string): string | null {
+  if (!sourceUrl.match(/(?:github|gitlab)\.com\//)) {
+    return null;
+  }
+  return `https://oss.opentrace.ai/?repo=${encodeURIComponent(sourceUrl)}`;
+}
+
 function getStyles(theme: GrafanaTheme2) {
   const base = getSectionStyles(theme);
-  return { ...base };
+  return {
+    ...base,
+    buttonsRow: css`
+      display: flex;
+      gap: ${theme.spacing(1)};
+      margin-top: ${theme.spacing(1)};
+    `,
+    sourceButton: css`
+      display: inline-flex;
+      align-items: center;
+      padding: ${theme.spacing(0.5, 1.5)};
+      border-radius: ${theme.shape.radius.default};
+      font-size: ${theme.typography.bodySmall.fontSize};
+      font-weight: ${theme.typography.fontWeightMedium};
+      background: ${theme.colors.success.transparent};
+      border: 1px solid ${theme.colors.success.border};
+      color: ${theme.colors.success.text};
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      &:hover {
+        background: ${theme.colors.success.main};
+        color: ${theme.colors.success.contrastText};
+      }
+    `,
+    opentraceButton: css`
+      display: inline-flex;
+      align-items: center;
+      padding: ${theme.spacing(0.5, 1.5)};
+      border-radius: ${theme.shape.radius.default};
+      font-size: ${theme.typography.bodySmall.fontSize};
+      font-weight: ${theme.typography.fontWeightMedium};
+      background: ${theme.colors.info.transparent};
+      border: 1px solid ${theme.colors.info.border};
+      color: ${theme.colors.info.text};
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      &:hover {
+        background: ${theme.colors.info.main};
+        color: ${theme.colors.info.contrastText};
+      }
+    `,
+  };
 }
 
 function MetadataHeaderRenderer({ model }: SceneComponentProps<MetadataHeader>) {
@@ -206,6 +259,23 @@ function MetadataHeaderRenderer({ model }: SceneComponentProps<MetadataHeader>) 
           </div>
         </div>
       )}
+
+      {meta.annotations?.[SOURCE_ANNOTATION] && (() => {
+        const sourceUrl = meta.annotations[SOURCE_ANNOTATION];
+        const opentraceUrl = getOpenTraceUrl(sourceUrl);
+        return (
+          <div className={styles.buttonsRow}>
+            <a className={styles.sourceButton} href={sourceUrl} target="_blank" rel="noopener noreferrer">
+              Source
+            </a>
+            {opentraceUrl && (
+              <a className={styles.opentraceButton} href={opentraceUrl} target="_blank" rel="noopener noreferrer">
+                OpenTrace
+              </a>
+            )}
+          </div>
+        );
+      })()}
     </CollapsibleSection>
   );
 }

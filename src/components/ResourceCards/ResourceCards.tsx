@@ -3,6 +3,7 @@ import { css } from '@emotion/css';
 import { SceneObjectBase, SceneObjectState, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { GrafanaTheme2, DataFrame, dateTime } from '@grafana/data';
+import { PLUGIN_BASE_URL, ROUTES } from '../../constants';
 
 // Generic row: pulls every possible field from the data frame.
 // Missing fields are undefined — card renderers handle that gracefully.
@@ -78,6 +79,32 @@ function jsonArr(val: any): string[] {
     return parsed.map((v) => (v && typeof v === 'object' ? JSON.stringify(v) : String(v)));
   }
   return [];
+}
+
+// ── Source URL helper ────────────────────────────────────────────────────────
+
+const SOURCE_ANNOTATION = 'app.kubernetes.io/source-url';
+
+interface SourceInfo {
+  url: string;
+}
+
+function getSourceUrl(row: ResourceRow): SourceInfo | null {
+  const annotations = parseJson(row['Annotations']);
+  if (annotations && annotations[SOURCE_ANNOTATION]) {
+    return { url: annotations[SOURCE_ANNOTATION] };
+  }
+  return null;
+}
+
+function getOpenTraceUrl(sourceInfo: SourceInfo | null): string | null {
+  if (!sourceInfo) {
+    return null;
+  }
+  if (!sourceInfo.url.match(/(?:github|gitlab)\.com\//)) {
+    return null;
+  }
+  return `https://oss.opentrace.ai/?repo=${encodeURIComponent(sourceInfo.url)}`;
 }
 
 // ── Badge config per resource type ──────────────────────────────────────────
@@ -205,6 +232,8 @@ interface StatItem {
   value: string;
   large?: boolean;
   color?: string;
+  width?: number;
+  href?: string;
 }
 
 function getStats(row: ResourceRow, resourceType: string, theme: GrafanaTheme2): StatItem[] {
@@ -212,7 +241,7 @@ function getStats(row: ResourceRow, resourceType: string, theme: GrafanaTheme2):
     // ── Workloads ──
     case 'pods':
       return [
-        { label: 'Node', value: row['Node'] || '-' },
+        { label: 'Node', value: row['Node'] || '-', width: 350, href: row['Node'] ? `${PLUGIN_BASE_URL}/${ROUTES.Cluster}/node/${row['Node']}` : undefined },
         { label: 'Restarts', value: String(row['Restarts'] ?? 0), large: true, color: (row['Restarts'] ?? 0) > 0 ? theme.colors.warning.text : undefined },
       ];
     case 'deployments':
@@ -376,75 +405,52 @@ function getChips(row: ResourceRow, resourceType: string): string[] {
   }
 }
 
+const LABEL_COLORS = [
+  '#5794F2', '#73BF69', '#F2CC0C', '#FF9830', '#FA6400', '#B877D9', '#8AB8FF',
+];
+
 // ── Styles ──────────────────────────────────────────────────────────────────
 
 function getStyles(theme: GrafanaTheme2) {
   return {
     grid: css`
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: ${theme.spacing(1.5)};
-      padding: ${theme.spacing(1)};
-    `,
-    card: css`
-      position: relative;
-      background: ${theme.colors.background.secondary};
-      border: 1px solid ${theme.colors.border.weak};
-      border-radius: ${theme.shape.radius.default};
-      padding: ${theme.spacing(2)};
       display: flex;
       flex-direction: column;
       gap: ${theme.spacing(1)};
+      padding: ${theme.spacing(1)};
+    `,
+    card: css`
+      background: ${theme.colors.background.secondary};
+      border: 1px solid ${theme.colors.border.weak};
+      border-radius: ${theme.shape.radius.default};
+      padding: ${theme.spacing(1, 2)};
       cursor: pointer;
       transition: border-color 0.15s ease;
+      border-left: 4px solid transparent;
       &:hover {
         border-color: ${theme.colors.border.medium};
       }
     `,
-    cardOverlay: css`
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      background: ${theme.colors.background.secondary};
-      border: 1px solid ${theme.colors.border.medium};
-      border-radius: ${theme.shape.radius.default};
-      padding: ${theme.spacing(2)};
-      display: flex;
-      flex-direction: column;
-      gap: ${theme.spacing(1)};
-      cursor: pointer;
-      box-shadow: ${theme.shadows.z3};
-    `,
-    expandToggle: css`
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    expandArrow: css`
       color: ${theme.colors.text.secondary};
       font-size: 12px;
-      padding: 0;
-      margin-top: ${theme.spacing(0.5)};
-      cursor: pointer;
-      background: none;
-      border: none;
-      width: 100%;
-      &:hover {
-        color: ${theme.colors.text.link};
-      }
+      flex-shrink: 0;
+      margin-left: ${theme.spacing(1)};
     `,
     header: css`
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
+      gap: ${theme.spacing(2)};
       min-width: 0;
     `,
     headerText: css`
-      min-width: 0;
+      width: 450px;
+      min-width: 200px;
+      flex-shrink: 0;
       overflow: hidden;
     `,
     name: css`
-      font-size: ${theme.typography.h5.fontSize};
+      font-size: ${theme.typography.body.fontSize};
       font-weight: ${theme.typography.fontWeightMedium};
       color: ${theme.colors.text.link};
       white-space: nowrap;
@@ -454,17 +460,47 @@ function getStyles(theme: GrafanaTheme2) {
     statusBadge: css`
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       padding: 2px 8px;
       border-radius: ${theme.shape.radius.pill};
       font-size: ${theme.typography.bodySmall.fontSize};
       font-weight: ${theme.typography.fontWeightMedium};
       white-space: nowrap;
       flex-shrink: 0;
-      margin-left: ${theme.spacing(1)};
+      min-width: 80px;
     `,
     namespace: css`
       font-size: ${theme.typography.bodySmall.fontSize};
       color: ${theme.colors.text.secondary};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `,
+    inlineStats: css`
+      display: flex;
+      align-items: center;
+      gap: ${theme.spacing(3)};
+      margin-left: ${theme.spacing(2)};
+    `,
+    inlineStat: css`
+      font-size: ${theme.typography.bodySmall.fontSize};
+      color: ${theme.colors.text.secondary};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 350px;
+      & > strong {
+        color: ${theme.colors.text.primary};
+        font-weight: ${theme.typography.fontWeightMedium};
+      }
+    `,
+    ageColumn: css`
+      font-size: ${theme.typography.bodySmall.fontSize};
+      color: ${theme.colors.text.secondary};
+      white-space: nowrap;
+      text-align: right;
+      flex-shrink: 0;
+      margin-left: auto;
     `,
     statsRow: css`
       display: flex;
@@ -493,6 +529,20 @@ function getStyles(theme: GrafanaTheme2) {
       text-overflow: ellipsis;
       max-width: 200px;
     `,
+    sectionLabel: css`
+      font-size: ${theme.typography.bodySmall.fontSize};
+      color: ${theme.colors.text.secondary};
+      margin-bottom: ${theme.spacing(0.5)};
+    `,
+    labelChip: css`
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 11px;
+      color: ${theme.colors.background.primary};
+      white-space: nowrap;
+    `,
     chipsRow: css`
       display: flex;
       flex-wrap: wrap;
@@ -511,6 +561,42 @@ function getStyles(theme: GrafanaTheme2) {
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: calc(100% - 80px);
+    `,
+    sourceLinkGreen: css`
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-size: 11px;
+      background: ${theme.colors.success.transparent};
+      border: 1px solid ${theme.colors.success.border};
+      color: ${theme.colors.success.text};
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      flex-shrink: 0;
+      &:hover {
+        background: ${theme.colors.success.main};
+        color: ${theme.colors.success.contrastText};
+      }
+    `,
+    opentraceLink: css`
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-size: 11px;
+      background: ${theme.colors.info.transparent};
+      border: 1px solid ${theme.colors.info.border};
+      color: ${theme.colors.info.text};
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      flex-shrink: 0;
+      &:hover {
+        background: ${theme.colors.info.main};
+        color: ${theme.colors.info.contrastText};
+      }
     `,
     chipsToggle: css`
       display: inline-flex;
@@ -565,6 +651,67 @@ function getStyles(theme: GrafanaTheme2) {
       }
       &::placeholder {
         color: ${theme.colors.text.disabled};
+      }
+    `,
+    sortWrapper: css`
+      position: relative;
+      display: inline-flex;
+    `,
+    sortTrigger: css`
+      padding: ${theme.spacing(0.5, 1.5)};
+      border-radius: ${theme.shape.radius.default};
+      border: 1px solid ${theme.colors.border.medium};
+      background: ${theme.colors.background.secondary};
+      color: ${theme.colors.text.primary};
+      font-size: ${theme.typography.bodySmall.fontSize};
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: ${theme.spacing(0.75)};
+      &:hover {
+        background: ${theme.colors.background.canvas};
+      }
+    `,
+    sortMenu: css`
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: ${theme.spacing(0.5)};
+      z-index: 20;
+      background: ${theme.colors.background.secondary};
+      border: 1px solid ${theme.colors.border.medium};
+      border-radius: ${theme.shape.radius.default};
+      box-shadow: ${theme.shadows.z3};
+      min-width: 160px;
+      overflow: hidden;
+    `,
+    sortMenuItem: css`
+      display: block;
+      width: 100%;
+      padding: ${theme.spacing(0.75, 1.5)};
+      border: none;
+      background: none;
+      color: ${theme.colors.text.primary};
+      font-size: ${theme.typography.bodySmall.fontSize};
+      text-align: left;
+      cursor: pointer;
+      &:hover {
+        background: ${theme.colors.background.canvas};
+      }
+    `,
+    sortMenuItemActive: css`
+      display: block;
+      width: 100%;
+      padding: ${theme.spacing(0.75, 1.5)};
+      border: none;
+      background: none;
+      color: ${theme.colors.text.link};
+      font-size: ${theme.typography.bodySmall.fontSize};
+      font-weight: ${theme.typography.fontWeightMedium};
+      text-align: left;
+      cursor: pointer;
+      &:hover {
+        background: ${theme.colors.background.canvas};
       }
     `,
     paginationBar: css`
@@ -630,9 +777,14 @@ interface CardProps {
   styles: ReturnType<typeof getStyles>;
   theme: GrafanaTheme2;
   href?: string;
+  forceExpand?: boolean | null;
+  onLocalToggle?: () => void;
 }
 
-function CardHeader({ row, badge, styles, theme, href }: { row: ResourceRow; badge: BadgeInfo | null; styles: ReturnType<typeof getStyles>; theme: GrafanaTheme2; href?: string }) {
+function CardHeader({ row, badge, stats, styles, theme, href, expanded }: {
+  row: ResourceRow; badge: BadgeInfo | null; stats: StatItem[];
+  styles: ReturnType<typeof getStyles>; theme: GrafanaTheme2; href?: string; expanded?: boolean;
+}) {
   return (
     <div className={styles.header}>
       <div className={styles.headerText}>
@@ -655,17 +807,45 @@ function CardHeader({ row, badge, styles, theme, href }: { row: ResourceRow; bad
           {badge.text}
         </span>
       )}
+      <div className={styles.inlineStats}>
+        {stats.map((s, j) => (
+          <span key={j} className={styles.inlineStat} style={s.width ? { width: s.width, minWidth: s.width } : undefined}>
+            {s.label}:{' '}
+            {s.href ? (
+              <a href={s.href} onClick={(e) => e.stopPropagation()} style={{ color: theme.colors.text.link, textDecoration: 'none' }}>
+                <strong style={s.color ? { color: s.color } : undefined}>{s.value}</strong>
+              </a>
+            ) : (
+              <strong style={s.color ? { color: s.color } : undefined}>{s.value}</strong>
+            )}
+          </span>
+        ))}
+      </div>
+      {row.created && (
+        <span className={styles.ageColumn}>
+          {formatAge(row.created)}
+        </span>
+      )}
+      <span className={styles.expandArrow}>{expanded ? '▲' : '▼'}</span>
     </div>
   );
 }
 
-function CardDetails({ row, resourceType, stats, chips, styles, theme }: {
+const IMAGE_RESOURCE_TYPES = new Set([
+  'pods', 'deployments', 'replicasets', 'daemonsets', 'statefulsets', 'jobs', 'cronjobs',
+]);
+
+function CardDetails({ row, resourceType, stats, chips, styles }: {
   row: ResourceRow; resourceType: string; stats: StatItem[]; chips: string[];
-  styles: ReturnType<typeof getStyles>; theme: GrafanaTheme2;
+  styles: ReturnType<typeof getStyles>;
 }) {
   const [chipsExpanded, setChipsExpanded] = useState(false);
   const visibleChips = chipsExpanded ? chips : chips.slice(0, 1);
   const hiddenCount = chips.length - 1;
+  const isImageChips = IMAGE_RESOURCE_TYPES.has(resourceType);
+  const source = isImageChips ? getSourceUrl(row) : null;
+  const labels = parseJson(row['Labels']);
+  const annotations = parseJson(row['Annotations']);
 
   return (
     <>
@@ -698,6 +878,60 @@ function CardDetails({ row, resourceType, stats, chips, styles, theme }: {
               {chipsExpanded ? 'show less' : `+${hiddenCount} more`}
             </button>
           )}
+          {source && (
+            <>
+              <a
+                className={styles.sourceLinkGreen}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title={`Source: ${source.url}`}
+              >
+                Source
+              </a>
+              {getOpenTraceUrl(source) && (
+                <a
+                  className={styles.opentraceLink}
+                  href={getOpenTraceUrl(source)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Explore in OpenTrace"
+                >
+                  OpenTrace
+                </a>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {labels && Object.keys(labels).length > 0 && (
+        <div>
+          <div className={styles.sectionLabel}>Labels</div>
+          <div className={styles.chipsRow}>
+            {Object.entries(labels).map(([k, v], j) => (
+              <span key={k} className={styles.labelChip} style={{ backgroundColor: LABEL_COLORS[j % LABEL_COLORS.length] }} title={`${k}: ${String(v)}`}>
+                {k}: {String(v)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {annotations && Object.keys(annotations).length > 0 && (
+        <div>
+          <div className={styles.sectionLabel}>Annotations</div>
+          <div className={styles.chipsRow}>
+            {Object.entries(annotations).map(([k, v]) => {
+              const display = String(v);
+              const truncated = display.length > 60 ? display.substring(0, 60) + '...' : display;
+              return (
+                <span key={k} className={styles.chip} title={`${k}: ${display}`}>
+                  {k}: {truncated}
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
       {resourceType === 'events' && row['Message'] && (
@@ -708,33 +942,26 @@ function CardDetails({ row, resourceType, stats, chips, styles, theme }: {
   );
 }
 
-function ResourceCard({ row, resourceType, styles, theme, href }: CardProps) {
-  const [expanded, setExpanded] = useState(false);
+function ResourceCard({ row, resourceType, styles, theme, href, forceExpand, onLocalToggle }: CardProps) {
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const expanded = forceExpand != null ? forceExpand : localExpanded;
   const badge = getBadge(row, resourceType, theme);
   const stats = getStats(row, resourceType, theme);
   const chips = getChips(row, resourceType);
-  const hasBody = stats.length > 0 || chips.length > 0 || (resourceType === 'events' && row['Message']) || row.created;
-
   const toggleExpand = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setExpanded(!expanded);
+    if (forceExpand != null) {
+      onLocalToggle?.();
+    }
+    setLocalExpanded(!expanded);
   };
 
   return (
-    <div className={styles.card} onClick={hasBody && !expanded ? toggleExpand : undefined}>
-      <CardHeader row={row} badge={badge} styles={styles} theme={theme} href={href} />
-      {hasBody && !expanded && (
-        <span className={styles.expandToggle}>▼</span>
-      )}
+    <div className={styles.card} style={{ borderLeftColor: badge?.color ?? 'transparent' }} onClick={toggleExpand}>
+      <CardHeader row={row} badge={badge} stats={stats} styles={styles} theme={theme} href={href} expanded={expanded} />
       {expanded && (
-        <div className={styles.cardOverlay} onClick={(e) => e.stopPropagation()}>
-          <CardHeader row={row} badge={badge} styles={styles} theme={theme} href={href} />
-          <CardDetails row={row} resourceType={resourceType} stats={stats} chips={chips} styles={styles} theme={theme} />
-          <button className={styles.expandToggle} onClick={toggleExpand}>
-            ▲
-          </button>
-        </div>
+        <CardDetails row={row} resourceType={resourceType} stats={stats} chips={chips} styles={styles} />
       )}
     </div>
   );
@@ -756,6 +983,9 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(24);
   const [search, setSearch] = useState('');
+  const [expandAll, setExpandAll] = useState<boolean | null>(null);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOpen, setSortOpen] = useState(false);
 
   const allRows = extractRows(data);
 
@@ -767,10 +997,59 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
     return <div className={styles.emptyState}>No resources found.</div>;
   }
 
+  // Build sort options from available fields
+  const sortOptions: { value: string; label: string }[] = [
+    { value: 'name', label: 'Name' },
+    { value: 'namespace', label: 'Namespace' },
+    { value: 'age-asc', label: 'Newest first' },
+    { value: 'age-desc', label: 'Oldest first' },
+  ];
+  // Add resource-specific sort fields
+  if (allRows[0]?.['Status'] != null) {
+    sortOptions.push({ value: 'status', label: 'Status' });
+  }
+  if (allRows[0]?.['Node'] != null) {
+    sortOptions.push({ value: 'node', label: 'Node' });
+  }
+  if (allRows[0]?.['Restarts'] != null) {
+    sortOptions.push({ value: 'restarts', label: 'Restarts' });
+  }
+  if (allRows[0]?.['Target'] != null) {
+    sortOptions.push({ value: 'target', label: 'Target' });
+  }
+  if (allRows[0]?.['Available'] != null) {
+    sortOptions.push({ value: 'available', label: 'Available' });
+  }
+
   const query = search.toLowerCase();
-  const rows = query
+  const filtered = query
     ? allRows.filter((r) => r.name.toLowerCase().includes(query) || r.namespace.toLowerCase().includes(query))
     : allRows;
+
+  const rows = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'namespace':
+        return (a.namespace ?? '').localeCompare(b.namespace ?? '');
+      case 'age-asc':
+        return (b.created ? new Date(b.created).getTime() : 0) - (a.created ? new Date(a.created).getTime() : 0);
+      case 'age-desc':
+        return (a.created ? new Date(a.created).getTime() : 0) - (b.created ? new Date(b.created).getTime() : 0);
+      case 'status':
+        return (a['Status'] ?? '').localeCompare(b['Status'] ?? '');
+      case 'node':
+        return (a['Node'] ?? '').localeCompare(b['Node'] ?? '');
+      case 'restarts':
+        return (b['Restarts'] ?? 0) - (a['Restarts'] ?? 0);
+      case 'target':
+        return (b['Target'] ?? 0) - (a['Target'] ?? 0);
+      case 'available':
+        return (b['Available'] ?? 0) - (a['Available'] ?? 0);
+      default:
+        return 0;
+    }
+  });
 
   const totalPages = Math.ceil(rows.length / pageSize);
   const safePage = Math.min(page, Math.max(totalPages - 1, 0));
@@ -791,6 +1070,36 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
           }}
         />
         <div className={styles.paginationControls}>
+          <div className={styles.sortWrapper}>
+            <button className={styles.sortTrigger} onClick={() => setSortOpen(!sortOpen)}>
+              Sort: {sortOptions.find((o) => o.value === sortBy)?.label ?? 'Name'} {sortOpen ? '▲' : '▼'}
+            </button>
+            {sortOpen && (
+              <div className={styles.sortMenu}>
+                {sortOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={sortBy === opt.value ? styles.sortMenuItemActive : styles.sortMenuItem}
+                    onClick={() => {
+                      setSortBy(opt.value);
+                      setSortOpen(false);
+                      setPage(0);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            className={styles.pageButton}
+            onClick={() => {
+              setExpandAll((prev) => prev !== true);
+            }}
+          >
+            {expandAll === true ? 'Collapse All' : 'Expand All'}
+          </button>
           {[24, 48].map((size) => (
             <button
               key={size}
@@ -828,7 +1137,7 @@ function ResourceCardsRenderer({ model }: SceneComponentProps<ResourceCards>) {
             ?.replace('${name}', encodeURIComponent(row.name));
 
           return (
-            <ResourceCard key={i} row={row} resourceType={resourceType} styles={styles} theme={theme} href={href} />
+            <ResourceCard key={i} row={row} resourceType={resourceType} styles={styles} theme={theme} href={href} forceExpand={expandAll} onLocalToggle={() => setExpandAll(null)} />
           );
         })}
       </div>

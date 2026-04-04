@@ -70,7 +70,7 @@ function makeDrilldown(baseUrl: string, resource: ResourceName) {
 
 const getWorkloadsAppScene = () => {
   const baseUrl = prefixRoute(ROUTES.Workloads);
-  const resources: ResourceName[] = ['pods', 'deployments', 'replicasets', 'daemonsets', 'statefulsets', 'jobs', 'cronjobs'];
+  const resources: ResourceName[] = ['pods', 'deployments', 'daemonsets', 'statefulsets', 'jobs', 'cronjobs', 'replicasets'];
 
   const drilldowns = resources.map((r) => makeDrilldown(baseUrl, r));
 
