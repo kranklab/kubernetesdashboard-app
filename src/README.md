@@ -3,7 +3,7 @@
 A Grafana app plugin that provides a comprehensive Kubernetes cluster dashboard. Browse, search, and inspect every 
 Kubernetes resource through a card-based UI.
 
-![Cluster overview](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/overview.png)
+![Cluster overview](https://raw.githubusercontent.com/kranklab/kubernetesdashboard-app/main/src/img/overview.png)
 
 ## Overview
 
@@ -24,7 +24,7 @@ to your cluster, so resource access is controlled by the datasource credentials 
 - **Cluster** — Nodes, Namespaces, Events, Roles, Role Bindings, Cluster Roles, Cluster Role Bindings, Service Accounts, Network Policies, Persistent Volumes
 - **Custom Resource Definitions** — All CRDs with dedicated tabs for Traefik resources (IngressRoutes, Middlewares, TraefikServices)
 
-![Deployments](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/deployments.png)
+![Deployments](https://raw.githubusercontent.com/kranklab/kubernetesdashboard-app/main/src/img/deployments.png)
 
 ### Detail views
 
@@ -35,7 +35,7 @@ Click any resource name to open a tabbed detail view:
 - **Logs** — Live pod logs with container filtering, search, log-level color indicators, and an "Open in Loki" button that jumps to Grafana Explore with a pre-filled LogQL query
 - **Events** — Kubernetes events scoped to the resource
 
-![Configs and storage](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/configs-and-storage.png)
+![Configs and storage](https://raw.githubusercontent.com/kranklab/kubernetesdashboard-app/main/src/img/configs-and-storage.png)
 
 ## Requirements
 
