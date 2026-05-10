@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "Kubernetes-Dashboard",
-  "id": "kranklab-kubernetesdashboard-app",
+  "name": "Kubernetes Dashboard",
+  "id": "kranklab-kubernetes-dashboard-app",
   "backend": true,
   "executable": "gpx_kubernetes_dashboard",
   "info": {
-    "keywords": ["app"],
-    "description": "",
+    "keywords": ["app", "kubernetes", "k8s", "dashboard", "cluster"],
+    "description": "Browse, search, and inspect Kubernetes resources from Grafana. Card-based views for workloads, networking, config & storage, cluster resources, and CRDs, with drilldown detail panels including YAML, live pod logs, and events.",
     "author": {
       "name": "Kranklab"
     },
@@ -15,7 +15,20 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "Cluster overview",
+        "path": "img/overview.png"
+      },
+      {
+        "name": "Deployments",
+        "path": "img/deployments.png"
+      },
+      {
+        "name": "Configs and storage",
+        "path": "img/configs-and-storage.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

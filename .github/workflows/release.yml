@@ -62,6 +62,8 @@ jobs:
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
           zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+          sha1sum ${{ steps.metadata.outputs.archive }} | awk '{print $1}' > ${{ steps.metadata.outputs.archive }}.sha1
+          sha256sum ${{ steps.metadata.outputs.archive }} | awk '{print $1}' > ${{ steps.metadata.outputs.archive }}.sha256
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -69,4 +71,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: ${{ steps.metadata.outputs.archive }}
+          files: |
+            ${{ steps.metadata.outputs.archive }}
+            ${{ steps.metadata.outputs.archive }}.sha1
+            ${{ steps.metadata.outputs.archive }}.sha256

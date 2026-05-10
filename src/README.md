@@ -1,50 +1,50 @@
-<!-- This README file is going to be the one displayed on the Grafana.com website for your plugin. Uncomment and replace the content here before publishing.
+# Kubernetes Dashboard
 
-Remove any remaining comments before publishing as these may be displayed on Grafana.com -->
+A Grafana app plugin that provides a comprehensive Kubernetes cluster dashboard. Browse, search, and inspect every 
+Kubernetes resource through a card-based UI.
 
-# Kubernetes-Dashboard
+![Cluster overview](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/overview.png)
 
-<!-- To help maximize the impact of your README and improve usability for users, we propose the following loose structure:
+## Overview
 
-**BEFORE YOU BEGIN**
-- Ensure all links are absolute URLs so that they will work when the README is displayed within Grafana and Grafana.com
-- Be inspired ✨
-  - [grafana-polystat-panel](https://github.com/grafana/grafana-polystat-panel)
-  - [volkovlabs-variable-panel](https://github.com/volkovlabs/volkovlabs-variable-panel)
+Kubernetes Dashboard turns Grafana into a Kubernetes browser. Every resource type is rendered as paginated, searchable 
+cards with status badges, key stats, and expand-on-click details. Click a resource to drill into a detail view 
+with metadata, raw YAML, live logs, and events.
 
-**ADD SOME BADGES**
+The plugin uses the [kranklab-kubernetes-datasource](https://github.com/kranklab/grafana-kubernetes-datasource) to talk 
+to your cluster, so resource access is controlled by the datasource credentials and Kubernetes RBAC.
 
-Badges convey useful information at a glance for users whether in the Catalog or viewing the source code. You can use the generator on [Shields.io](https://shields.io/badges/dynamic-json-badge) together with the Grafana.com API
-to create dynamic badges that update automatically when you publish a new version to the marketplace.
+## Features
 
-- For the URL parameter use `https://grafana.com/api/plugins/your-plugin-id`.
-- Example queries:
-  - Downloads: `$.downloads`
-  - Catalog Version: `$.version`
-  - Grafana Dependency: `$.grafanaDependency`
-  - Signature Type: `$.versionSignatureType`
-- Optionally, for the logo parameter use `grafana`.
+### Resource browsing
 
-Full example: ![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/grafana-polystat-panel&label=Marketplace&prefix=v&color=F47A20)
+- **Workloads** — Pods, Deployments, Replica Sets, Daemon Sets, Stateful Sets, Jobs, Cron Jobs
+- **Networking** — Services, Ingresses, Ingress Classes
+- **Config & Storage** — Config Maps, Persistent Volume Claims, Secrets, Storage Classes
+- **Cluster** — Nodes, Namespaces, Events, Roles, Role Bindings, Cluster Roles, Cluster Role Bindings, Service Accounts, Network Policies, Persistent Volumes
+- **Custom Resource Definitions** — All CRDs with dedicated tabs for Traefik resources (IngressRoutes, Middlewares, TraefikServices)
 
-Consider other [badges](https://shields.io/badges) as you feel appropriate for your project.
+![Deployments](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/deployments.png)
 
-## Overview / Introduction
-Provide one or more paragraphs as an introduction to your plugin to help users understand why they should use it.
+### Detail views
 
-Consider including screenshots:
-- in [plugin.json](https://grafana.com/developers/plugin-tools/reference/plugin-json#info) include them as relative links.
-- in the README ensure they are absolute URLs.
+Click any resource name to open a tabbed detail view:
+
+- **Overview** — Metadata, labels, annotations, conditions, containers, related resources
+- **YAML** — Raw YAML manifest
+- **Logs** — Live pod logs with container filtering, search, log-level color indicators, and an "Open in Loki" button that jumps to Grafana Explore with a pre-filled LogQL query
+- **Events** — Kubernetes events scoped to the resource
+
+![Configs and storage](https://raw.githubusercontent.com/kranklab/kranklab-kubernetesdashboard-app/main/src/img/configs-and-storage.png)
 
 ## Requirements
-List any requirements or dependencies they may need to run the plugin.
 
-## Getting Started
-Provide a quick start on how to configure and use the plugin.
+- Grafana >= 12.4.0
+- [kranklab-kubernetes-datasource](https://github.com/kranklab/grafana-kubernetes-datasource) plugin installed and configured against your cluster
 
-## Documentation
-If your project has dedicated documentation available for users, provide links here. For help in following Grafana's style recommendations for technical documentation, refer to our [Writer's Toolkit](https://grafana.com/docs/writers-toolkit/).
+## Getting started
 
-## Contributing
-Do you want folks to contribute to the plugin or provide feedback through specific means? If so, tell them how!
--->
+1. Install the [kranklab-kubernetes-datasource](https://github.com/kranklab/grafana-kubernetes-datasource) plugin and configure it with credentials for your cluster.
+2. Install the Kubernetes Dashboard plugin from the Grafana plugin catalog.
+3. Enable the app from **Administration → Plugins and data → Plugins**.
+4. Open the **Kubernetes Dashboard** app from the navigation menu.
