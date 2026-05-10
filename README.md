@@ -1,6 +1,7 @@
 # Kubernetes Dashboard for Grafana
 
-A Grafana app plugin that provides a comprehensive Kubernetes cluster dashboard built with [@grafana/scenes](https://github.com/grafana/scenes). Browse, search, and inspect all Kubernetes resources through a card-based UI with drilldown detail views.
+A Grafana app plugin that provides a comprehensive Kubernetes cluster dashboard built with [@grafana/scenes](https://github.com/grafana/scenes). 
+Browse, search, and inspect all Kubernetes resources through a card-based UI with drilldown detail views.
 
 ## Features
 
